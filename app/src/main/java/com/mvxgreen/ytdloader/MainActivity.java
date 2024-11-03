@@ -25,6 +25,7 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.inputmethod.InputMethodManager;
+import android.webkit.WebResourceRequest;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -47,9 +48,21 @@ import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
+
+import kotlin.text.Charsets;
+import okhttp3.Call;
+import okhttp3.FormBody;
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getCanonicalName(),
@@ -447,24 +460,96 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadVideoInfo(String url) {
-        // run async
-        //calling python function with it's object to extract audio
-        Python py = Python.getInstance();
-        PyObject pyObject = py.getModule("download_video");
+        String encodedUrl = "";
+        String titleStr = "", extStr = "", thumbStr ="";
+        String getUrl = "https://www.tubeninja.net/welcome?url={url}", postUrl = "https://www.tubeninja.net/get";
 
-        // extract video information
-        PyObject title = pyObject.callAttr("extract_video_title", url);
-        String titleStr = title.toString();
-        titleStr = titleStr.substring(0, 25);
-        PyObject thumbnail = pyObject.callAttr("extract_video_thumbnail", url);
-        String thumbStr = thumbnail.toString();
-        PyObject ext = pyObject.callAttr("extract_video_ext", url);
-        String extStr = ext.toString();
+        if (url.contains("youtu.be")) {
+            // run async
+            //calling python function with it's object to extract audio
+            Python py = Python.getInstance();
+            PyObject pyObject = py.getModule("download_video");
 
-        Log.i(TAG, "Extracted video info: "
-                + "filename: " + titleStr + "\n"
-                + "ext: " + extStr + "\n"
-                + "thumbnail url: " + thumbStr);
+            // extract video information
+
+            PyObject title = pyObject.callAttr("extract_video_title", url);
+            titleStr = title.toString();
+            titleStr = titleStr.substring(0, 25);
+            PyObject thumbnail = pyObject.callAttr("extract_video_thumbnail", url);
+            thumbStr = thumbnail.toString();
+            PyObject ext = pyObject.callAttr("extract_video_ext", url);
+            extStr = ext.toString();
+
+            Log.i(TAG, "Extracted video info: "
+                    + "filename: " + titleStr + "\n"
+                    + "ext: " + extStr + "\n"
+                    + "thumbnail url: " + thumbStr);
+
+        } else {
+            //WebResourceRequest request;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                try {
+                    encodedUrl = URLEncoder.encode(url, Charsets.UTF_8.name());
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            OkHttpClient okHttpClient = new OkHttpClient();
+            final Call call = okHttpClient.newCall(new Request.Builder()
+                    .url(getUrl.replace("{url}", encodedUrl))
+                    .get()
+                    //.headers(Headers.of(request.getRequestHeaders()))
+                    .build()
+            );
+            try {
+                final Response response = call.execute();
+                assert response.body() != null;
+                String document = response.body().string();
+
+                printLongLog(document);
+
+                // extract token
+                String token_flag = "csrfmiddlewaretoken";
+                if (document.contains(token_flag)) {
+                    Log.i(TAG, "found token");
+                    String tok = document.substring(document.indexOf(token_flag)+token_flag.length()+1);
+                    tok = tok.substring(tok.indexOf('\'')+1);
+                    tok = tok.substring(0, tok.indexOf('\''));
+                    Log.i(TAG, "extracted token: " + tok);
+                    mPrefsManager.setToken(tok);
+                }
+
+                response.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            RequestBody formBody = new FormBody.Builder()
+                    .add("url", url)
+                    .add("csrfmiddlewaretoken", mPrefsManager.getToken())
+                    .build();
+            final Call callPost = okHttpClient.newCall(new Request.Builder()
+                    .url(postUrl)
+                    .post(formBody)
+                    //.headers(Headers.of(request.getRequestHeaders()))
+                    .build()
+            );
+            try {
+                final Response response = callPost.execute();
+                assert response.body() != null;
+                String document = response.body().string();
+
+                printLongLog(document);
+
+                response.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+
 
         mPrefsManager.setFileName(titleStr);
         mPrefsManager.setThumbnailUrl(thumbStr);
@@ -476,6 +561,16 @@ public class MainActivity extends AppCompatActivity {
 
             showPreviewLayout();
         });
+    }
+
+    public static void printLongLog(String l) {
+        int maxLogSize = 1000;
+        for(int i = 0; i <= l.length() / maxLogSize; i++) {
+            int start = i * maxLogSize;
+            int end = (i+1) * maxLogSize;
+            end = Math.min(end, l.length());
+            Log.i(TAG, l.substring(start, end));
+        }
     }
 
     //async method to extract audio from video in background

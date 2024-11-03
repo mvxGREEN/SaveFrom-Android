@@ -1,12 +1,12 @@
 <resources>
     // app
-    <string name="app_name" translatable="false">ULoader</string>
-    <string name="app_name_official" translatable="false">ULoader Video Downloader</string>
+    <string name="app_name" translatable="false">VideoLoader</string>
+    <string name="app_name_official" translatable="false">Video Downloader</string>
     <string name="app_version" translatable="false">Version 1.0.1</string>
     <string name="app_copyright" translatable="false">\u00A9 2021 mvxGREEN</string>
     <string name="mvxgreen_email" translatable="false">mvxgreen@gmail.com</string>
     // urls
-    <string name="hint_searchbar_url" translatable="false">https://on.sound…</string>
+    <string name="hint_searchbar_url" translatable="false">https://exam.ple…</string>
     <string name="frag_hint_valid_urls" translatable="false"><i>Supported URLs:
     \n\u2022 https://on.sound…/song
     \n\u2022 https://examp.le…/song.mp3</i></string>
@@ -79,6 +79,7 @@
     <string name="prefs_key_original_url">ORIGINAL_URL</string>
     <string name="prefs_key_title">VIDEO_TITLE</string>
     <string name="prefs_key_thumbnail_url">THUMBNAIL_URL</string>
+    <string name="prefs_key_token">TOKEN</string>
 
     // privacy policy
     <string-array name="pp_body" translatable="false">

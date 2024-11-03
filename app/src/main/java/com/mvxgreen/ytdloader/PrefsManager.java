@@ -24,7 +24,8 @@ public class PrefsManager {
             R.string.prefs_key_file_ext,
             R.string.prefs_key_original_url,
             R.string.prefs_key_title,
-            R.string.prefs_key_thumbnail_url
+            R.string.prefs_key_thumbnail_url,
+            R.string.prefs_key_token
     };
 
     /**
@@ -136,6 +137,22 @@ public class PrefsManager {
                 value
         );
         editor.apply();
+    }
+
+    public void setToken (String value) {
+        String key = "TOKEN";
+        Log.i(TAG, "set " + key + " in shared prefs: {" + key + "," + value + "}");
+
+        SharedPreferences.Editor editor = sharedPrefs.edit();
+        editor.putString(
+                key,
+                value
+        );
+        editor.apply();
+    }
+
+    public String getToken() {
+        return sharedPrefs.getString("TOKEN", "");
     }
 
     /**
