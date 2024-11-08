@@ -60,7 +60,7 @@ public class FileFragment extends Fragment {
 
         viewFileIntent = new Intent();
         viewFileIntent.setAction(Intent.ACTION_VIEW);
-        viewFileIntent.setDataAndType(uri, MIME_VIDEO);
+        viewFileIntent.setDataAndType(uri, MIME_MP4);
         viewFileIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
         // Check menu item id; inflate proper fragment
@@ -69,6 +69,13 @@ public class FileFragment extends Fragment {
         rootView.setBackgroundColor(
                 ContextCompat.getColor(rootView.getContext(), R.color.shadowInvisible)
         );
+
+        rootView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(viewFileIntent);
+            }
+        });
 
         return rootView;
     }
@@ -80,34 +87,12 @@ public class FileFragment extends Fragment {
     private void fillFileLayout(View root) {
         TextView name = root.findViewById(R.id.item_file_name);
         TextView subtitle = root.findViewById(R.id.item_file_subtitle);
-        FloatingActionButton playPause = root.findViewById(R.id.player_play_pause);
+        //FloatingActionButton playPause = root.findViewById(R.id.player_play_pause);
 
 
         name.setText(this.fileName);
         subtitle.setText(this.fileSubtitle);
 
-        if (mediaPlayer.isPlaying()) {
-            playPause.setImageResource(R.drawable.ic_pause);
-        } else {
-            playPause.setImageResource(R.drawable.ic_play);
-        }
-        playPause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.i(TAG, "onPlayPauseClick");
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mediaPlayer.isPlaying()) {
-                            playPause.setImageResource(R.drawable.ic_play);
-                            mediaPlayer.pause();
-                        } else {
-                            playPause.setImageResource(R.drawable.ic_pause);
-                            mediaPlayer.start();
-                        }
-                    }
-                }).start();
-            }
-        });
+
     }
 }

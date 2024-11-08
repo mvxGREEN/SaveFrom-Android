@@ -4,6 +4,7 @@ import static com.mvxgreen.ytdloader.MediaManager.MIME_MP4;
 
 import android.Manifest;
 import android.app.Application;
+import android.app.Dialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -20,13 +21,20 @@ import android.os.StrictMode;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
+import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebResourceRequest;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -71,6 +79,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import pl.droidsonroids.gif.GifImageView;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getCanonicalName(),
@@ -304,10 +313,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showFileFrag() {
-        /*
-        String fileName = prefsManager.getFileName();
-        String fileExt = prefsManager.getFileExt();
-        final String absPath = ABSOLUTE_PATH_MUSIC + fileName + fileExt;
+        String fileName = mPrefsManager.getFileName();
+        String fileExt = mPrefsManager.getFileExt();
+        final String absPath = ABS_PATH_DOCS + fileName + "." + fileExt;
 
         // Inflate fragment
         runOnUiThread(() -> {
@@ -318,15 +326,13 @@ public class MainActivity extends AppCompatActivity {
             fileFragment.setArguments(extras);
             ConstraintLayout fragView = MainActivity.this.findViewById(R.id.file_hint_holder);
             fragView.removeAllViews();
-            fragView.startAnimation(mLayoutManager.fadeIn);
+            fragView.startAnimation(fadeIn);
             fragView.setVisibility(View.VISIBLE);
             getSupportFragmentManager().beginTransaction()
                     .setReorderingAllowed(true)
                     .add(R.id.file_hint_holder, fileFragment, null)
                     .commitAllowingStateLoss();
         });
-
-         */
     }
 
     public void closeFileFrag() {
@@ -622,6 +628,13 @@ public class MainActivity extends AppCompatActivity {
             new MediaManager(MainActivity.this,
                     absFilePath, MIME_MP4).scanMedia();
 
+            mPrefsManager.incrementTotalRuns();
+            int runs = mPrefsManager.getTotalRuns();
+
+            if (runs%3==1) {
+                showRateAd();
+            }
+
             runOnUiThread(() -> {
                 Toast.makeText(MainActivity.this, "Download finished!",
                         Toast.LENGTH_SHORT).show();
@@ -669,6 +682,56 @@ public class MainActivity extends AppCompatActivity {
         new Thread(() -> {
             downloadVideo(mPrefsManager.getOriginalUrl());
         }).start();
+    }
+
+    public void showRateAd() {
+        Log.i(TAG, "Showing rate ad");
+
+        final String appPackageName = this.getApplicationContext().getPackageName();
+
+        final Dialog dialog = new Dialog(new ContextThemeWrapper(this, R.style.DialogDrip));
+        dialog.setTitle(getString(R.string.msg_rate_dialog_title));
+
+        LinearLayout ll = new LinearLayout(MainActivity.this);
+        ll.setOrientation(LinearLayout.VERTICAL);
+
+        TextView tv = new TextView(MainActivity.this);
+        String msg = getString(R.string.msg_rate_dialog_body);
+        tv.setText(msg);
+        tv.setWidth(280);
+        tv.setPadding(4, 0, 4, 43);
+        tv.setTextAppearance(R.style.TextAppFragBody);
+        tv.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        ll.addView(tv);
+
+        LinearLayout l2 = new LinearLayout(MainActivity.this);
+        l2.setOrientation(LinearLayout.HORIZONTAL);
+        l2.setBottom(ll.getBottom());
+        l2.setForegroundGravity(Gravity.BOTTOM);
+
+        Button b3 = new Button(new ContextThemeWrapper(MainActivity.this, R.style.ButtonDripBad));
+        b3.setText(getString(R.string.msg_rate_button2));
+        b3.setOnClickListener(v -> dialog.dismiss());
+        l2.addView(b3);
+
+        Button b1 = new Button(new ContextThemeWrapper(MainActivity.this, R.style.ButtonDripGood));
+        b1.setText(getString(R.string.msg_rate_button1));
+        b1.setOnClickListener(v -> {
+            MainActivity.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id="
+                    + appPackageName)));
+            dialog.dismiss();
+        });
+        l2.addView(b1);
+
+        ll.addView(l2);
+        dialog.setContentView(ll);
+        if (!MainActivity.this.isFinishing()) {
+            try {
+                dialog.show();
+            } catch (Exception e) {
+                Log.w(TAG, "caught bad token exception");
+            }
+        }
     }
 
 }
