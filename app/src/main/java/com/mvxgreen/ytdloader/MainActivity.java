@@ -3,6 +3,7 @@ package com.mvxgreen.ytdloader;
 import static com.mvxgreen.ytdloader.MediaManager.MIME_MP4;
 
 import android.Manifest;
+import android.app.Application;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -83,6 +84,8 @@ public class MainActivity extends AppCompatActivity {
 
     PrefsManager mPrefsManager;
 
+    AndroidPlatform androidPlatform;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,7 +103,8 @@ public class MainActivity extends AppCompatActivity {
         mPrefsManager = new PrefsManager(MainActivity.this);
 
         if (!Python.isStarted()) {
-            Python.start(new AndroidPlatform(this));
+            androidPlatform = new AndroidPlatform(this);
+            Python.start(androidPlatform);
         }
 
         // check permissions
@@ -239,6 +243,15 @@ public class MainActivity extends AppCompatActivity {
         } catch (android.content.ActivityNotFoundException anfe) {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + appPackageName)));
         }
+    }
+
+    public static void setProgress(MainActivity mainActivity, String prog) {
+        Log.i(TAG, "setProgress: " + prog);
+        // TODO parse/convert prog into int and update ui
+        mainActivity.runOnUiThread(() -> {
+            mainActivity.mBinding.numProgress.setVisibility(View.VISIBLE);
+            mainActivity.mBinding.numProgress.setProgress(0);
+        });
     }
 
     /**
@@ -470,9 +483,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadVideoInfo(String url) {
-        String encodedUrl = "";
         String titleStr = "", extStr = "", thumbStr ="";
-        String getUrl = "https://www.tubeninja.net/welcome?url={url}", postUrl = "https://www.tubeninja.net/get";
+
+        runOnUiThread(() -> {
+            Toast.makeText(this, "Loading, this may take awhile...", Toast.LENGTH_LONG).show();
+        });
 
         // run async
         //calling python function with it's object to extract audio
@@ -551,7 +566,7 @@ public class MainActivity extends AppCompatActivity {
             PyObject pyObject = py.getModule("download_video");
 
             //now again calling the function to get the audio file url
-            PyObject result = pyObject.callAttr("download_video", videoUrl, ABS_PATH_DOCS);
+            PyObject result = pyObject.callAttr("download_video",MainActivity.this, videoUrl, ABS_PATH_DOCS);
             String res = result.toString();
             res = res.replace(" ", "_").replace("&","");
             Log.i(TAG, "video title: "+ res);
