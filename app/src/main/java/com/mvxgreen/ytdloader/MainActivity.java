@@ -247,10 +247,13 @@ public class MainActivity extends AppCompatActivity {
 
     public static void setProgress(MainActivity mainActivity, String prog) {
         Log.i(TAG, "setProgress: " + prog);
+        prog = prog.trim().replace("%", "");
+        int p = (int)Double.parseDouble(prog);
+
         // TODO parse/convert prog into int and update ui
         mainActivity.runOnUiThread(() -> {
             mainActivity.mBinding.numProgress.setVisibility(View.VISIBLE);
-            mainActivity.mBinding.numProgress.setProgress(0);
+            mainActivity.mBinding.numProgress.setProgress(p);
         });
     }
 
@@ -347,6 +350,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void showLoadingLayout() {
         Log.i(TAG, "showLoadingLayout()");
+
+        Toast.makeText(this, "Loading, this may take awhile…", Toast.LENGTH_LONG).show();
+
         closeFileFrag();
         mBinding.imgPreview.setVisibility(View.INVISIBLE);
         mBinding.btnDownload.setVisibility(View.GONE);
@@ -428,6 +434,8 @@ public class MainActivity extends AppCompatActivity {
     private void showDownloadingLayout() {
         Log.i(TAG, "showDownloadingLayout()");
 
+        Toast.makeText(this, "Downloading…", Toast.LENGTH_SHORT).show();
+
         updateFilenamePref();
         mBinding.btnDownload.setEnabled(false);
         mBinding.ivCircle.startAnimation(fadeOut);
@@ -435,6 +443,8 @@ public class MainActivity extends AppCompatActivity {
         mBinding.ivCircle.setVisibility(View.GONE);
         mBinding.btnDownload.setVisibility(View.GONE);
         mBinding.imgPreview.setAlpha(0.69f);
+        mBinding.numProgress.setVisibility(View.VISIBLE);
+        mBinding.numProgress.setProgress(0);
         new Handler().postDelayed(() -> {
             mBinding.glowingLoader.startAnimation(fadeIn);
             mBinding.glowingLoader.setVisibility(View.VISIBLE);
@@ -484,10 +494,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadVideoInfo(String url) {
         String titleStr = "", extStr = "", thumbStr ="";
-
-        runOnUiThread(() -> {
-            Toast.makeText(this, "Loading, this may take awhile...", Toast.LENGTH_LONG).show();
-        });
 
         // run async
         //calling python function with it's object to extract audio
