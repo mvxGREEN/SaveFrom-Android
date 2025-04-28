@@ -182,19 +182,23 @@ public class MainActivity extends AppCompatActivity {
                     killKeyboard();
                     showEmptyLayout();
                 } else if (count - oldCount > 1) {
-                    // text pasted
+                    String input = s.toString();
 
+                    // replace vimeo URL with vimeo player url
+                    if (input.contains("https://vimeo.com/")) {
+                        input = input.replace("https://vimeo.com/", "https://player.vimeo.com/video/");
+                    }
 
                     // get input
-                    String inputText = s.toString().trim();
+                    final String inputText = input;
 
                     /*
+                    // block youtube downloads
                     if (inputText.contains("youtu.be") || inputText.contains("youtube.com")) {
                         Toast.makeText(MainActivity.this, "Youtube URLs not supported :(", Toast.LENGTH_SHORT).show();
                         showEmptyLayout();
                         return;
                     }
-                    *
                      */
 
                     killKeyboard();
@@ -593,23 +597,24 @@ public class MainActivity extends AppCompatActivity {
             PyObject pyObject = py.getModule("download_video");
 
             //now again calling the function to get the audio file url
-            PyObject result = pyObject.callAttr("download_video",MainActivity.this, videoUrl, ABS_PATH_DOCS);
+            PyObject result = pyObject.callAttr("download_video",MainActivity.this, videoUrl, ABS_PATH_DOCS, mPrefsManager.getFileName());
             String res = result.toString();
-            Log.i(TAG, "video title: "+ res);
-            mPrefsManager.setFileName(res);
-            mPrefsManager.setVideoTitle(res);
+            Log.i(TAG, "format_ids: "+ res);
+            // TODO set pref video_format_id
+
+            // TODO download audio (?)
 
             return result.toString();
         }
 
         @Override
         protected void onPostExecute(String s) {
-            Log.i(TAG, "onPostExecute()\n" + s);
+            Log.i(TAG, "onPostExecute() format_id=" + s);
 
             // scan media
             //String title = mPrefsManager.getFileName();
             String ext = mPrefsManager.getFileExt();
-            String absFilePath = ABS_PATH_DOCS + s + "." + ext;
+            String absFilePath = ABS_PATH_DOCS + mPrefsManager.getFileName() + "." + ext;
             Log.i(TAG, "absolute filepath: " + absFilePath);
 
             File dl = new File(absFilePath);

@@ -4,22 +4,24 @@ import random
 from com.chaquo.python import Python
 from com.mvxgreen.ytdloader import MainActivity
 
-def download_video(activity, video_url, out):
+def download_video(activity, video_url, out, filename):
     # 'outtmpl': out + '%(title).25s.%(ext)s',
     progress_hook = create_progress_hook(activity)
     # prevent overwrite with random id
-    filename_id = f"{random.randint(1,10)}{random.randint(1,10)}{random.randint(1,10)}{random.randint(1,10)}_"
+    #
+
+    # 'format': "bestvideo,bestaudio",
+    # 'outtmpl': out + filename_id + '%(title).20s.f%(format_id)s.%(ext)s',
 
     ydl_opts = {
-        #'format': "bestvideo",
-        'outtmpl': out + filename_id + '%(title).25s.mp4',
+        'format': "bestvideo",
+        'outtmpl': out + filename + '.mp4',
         'restrictfilenames': True,
         'progress_hooks': [progress_hook]
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(video_url, download=True)
-        filename = info_dict['title'][0:25]
-        return filename_id + sanitize_filename(filename)
+        return info_dict['format_id']
 
 def create_progress_hook(a):
     def progress_hook(d):
@@ -31,18 +33,19 @@ def create_progress_hook(a):
 
 
 def extract_video_title(video_url):
+    filename_id = f"{random.randint(1,10)}{random.randint(1,10)}{random.randint(1,10)}{random.randint(1,10)}_"
     ydl_opts = {
-        #'format': "bestvideo",
+        'format': "bestvideo",
         'restrictfilenames': True,
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(video_url, download=False)
-
-        return info_dict['title'][0:25]
+        filename = filename_id + sanitize_filename(info_dict['title'][0:23])
+        return filename
 
 def extract_video_ext(video_url):
     ydl_opts = {
-        #'format': "bestvideo",
+        'format': "bestvideo",
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(video_url, download=False)
@@ -50,7 +53,7 @@ def extract_video_ext(video_url):
 
 def extract_video_dl_url(video_url):
     ydl_opts = {
-        #'format': "bestvideo",
+        'format': "bestvideo",
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(video_url, download=False)
