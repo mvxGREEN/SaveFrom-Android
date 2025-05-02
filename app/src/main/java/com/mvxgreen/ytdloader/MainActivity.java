@@ -3,7 +3,6 @@ package com.mvxgreen.ytdloader;
 import static com.mvxgreen.ytdloader.MediaManager.MIME_MP4;
 
 import android.Manifest;
-import android.app.Application;
 import android.app.Dialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -25,20 +24,16 @@ import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.inputmethod.InputMethodManager;
-import android.webkit.WebResourceRequest;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -50,6 +45,7 @@ import androidx.fragment.app.FragmentTransaction;
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.mvxgreen.ytdloader.databinding.ActivityMainBinding;
 import com.mvxgreen.ytdloader.frag.BigFragment;
 import com.mvxgreen.ytdloader.frag.FileFragment;
@@ -58,28 +54,9 @@ import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-import kotlin.text.Charsets;
-import okhttp3.Call;
-import okhttp3.Cookie;
-import okhttp3.CookieJar;
-import okhttp3.FormBody;
-import okhttp3.Headers;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import pl.droidsonroids.gif.GifImageView;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getCanonicalName(),
@@ -183,21 +160,39 @@ public class MainActivity extends AppCompatActivity {
                     showEmptyLayout();
                 } else if (count - oldCount > 1) {
                     String input = s.toString();
+                    String domain = "";
 
-
-                    // get input
+                    // validate and trim input
+                    boolean isValid = true;
+                    if (input.contains("https://")) {
+                        input = input.substring(input.indexOf("https://")+8);
+                        if (input.contains("/")) {
+                            domain = input.substring(0, input.lastIndexOf("/"));
+                        }
+                        input = "https://" + input;
+                    } else {
+                        isValid = false;
+                    }
                     final String inputText = input;
 
-                    /*
-                    // block youtube downloads
-                    if (inputText.contains("youtu.be") || inputText.contains("youtube.com")) {
-                        Toast.makeText(MainActivity.this, "Youtube URLs not supported :(", Toast.LENGTH_SHORT).show();
-                        showEmptyLayout();
-                        return;
-                    }
-                     */
+                    // log event
+                    try {
+                        Bundle bundle = new Bundle();
+                        bundle.putString("input", "load");
+                        bundle.putBoolean("input_valid", isValid);
+                        bundle.putString("input_text", inputText);
+                        bundle.putString("input_domain", domain);
+                        bundle.putString("app_name", "videoloader");
+                        FirebaseAnalytics.getInstance(MainActivity.this)
+                                .logEvent("input_load", bundle);
+                    } catch (Exception ignored) {}
 
                     killKeyboard();
+
+                    if (!isValid) {
+                        Toast.makeText(MainActivity.this, "Please paste a video link", Toast.LENGTH_SHORT).show();
+                    }
+
                     showLoadingLayout();
 
                     // check for internet & valid url
@@ -518,7 +513,7 @@ public class MainActivity extends AppCompatActivity {
         // run async
         //calling python function with it's object to extract audio
         Python py = Python.getInstance();
-        PyObject pyObject = py.getModule("download_video");
+        PyObject pyObject = py.getModule("vidloader");
 
         // extract video information
 
@@ -580,35 +575,57 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "DownloadVideoTask()");
         }
 
-
         //this method will download the audio file by using python script
         @Override
         protected String doInBackground(String... urls) {
             Log.i(TAG, "doInBackground()");
-            //get the url from model
             String videoUrl = urls[0];
 
-            //calling python function with it's object to extract audio
             Python py = Python.getInstance();
-            PyObject pyObject = py.getModule("download_video");
+            PyObject pyObject = py.getModule("vidloader");
 
-            //now again calling the function to get the audio file url
-            PyObject result = pyObject.callAttr("download_video",MainActivity.this, videoUrl, ABS_PATH_DOCS, mPrefsManager.getFileName());
-            String res = result.toString();
-            Log.i(TAG, "format_ids: "+ res);
-            // TODO set pref video_format_id
+            String res = "";
+            try {
+                Log.i(TAG, "trying download with audio...");
 
-            // TODO download audio (?)
+                // download with audio
+                PyObject result = pyObject.callAttr("dl_video_with_audio",MainActivity.this, videoUrl, ABS_PATH_DOCS, mPrefsManager.getFileName());
+                res = result.toString();
+                Log.i(TAG, "format_ids: "+ res);
+                mPrefsManager.setFormatId(res);
+            } catch (Exception e) {
+                e.printStackTrace();
+                String msg = "error downloading video! e="+e;
+                Log.e(TAG, msg);
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, "unknown error",
+                            Toast.LENGTH_SHORT).show();
+                    showEmptyLayout();
+                });
+            }
 
-            return result.toString();
+            // merge if necessary
+            if (mPrefsManager.getFormatId().contains("+")) {
+                // split format ids
+                String fIds = mPrefsManager.getFormatId();
+                String fIdVideo = fIds.substring(0, fIds.indexOf("+"));
+                String fIdAudio = fIds.substring(fIds.indexOf("+")+1);
+                // append format ids to separate filenames
+                String absFilepath = ABS_PATH_DOCS + mPrefsManager.getFileName() + ".mp4";
+                String absFilepathVideo = absFilepath + ".f" + fIdVideo;
+                String absFilepathAudio = absFilepath + ".f" + fIdAudio;
+                // merge with ffmpeg
+                ConcatRunner.merge(MainActivity.this, absFilepath, absFilepathVideo, absFilepathAudio);
+            }
+
+            return res;
         }
 
         @Override
         protected void onPostExecute(String s) {
-            Log.i(TAG, "onPostExecute() format_id=" + s);
+            Log.i(TAG, "OnPostExecute format_id=" + s);
 
             // scan media
-            //String title = mPrefsManager.getFileName();
             String ext = mPrefsManager.getFileExt();
             String absFilePath = ABS_PATH_DOCS + mPrefsManager.getFileName() + "." + ext;
             Log.i(TAG, "absolute filepath: " + absFilePath);
@@ -643,7 +660,6 @@ public class MainActivity extends AppCompatActivity {
 
                 showFinishLayout();
             });
-
         }
     }
 
@@ -652,6 +668,10 @@ public class MainActivity extends AppCompatActivity {
      * @param v clicked view
      */
     public void onPasteClick(View v) {
+        // clear search bar
+        mBinding.mainSearchBar.setText("");
+
+        // paste from clipboard
         ClipboardManager clipboardManager = (ClipboardManager) MainActivity.this.getSystemService(CLIPBOARD_SERVICE);
         String primaryStr = "";
         ClipData primaryClip = clipboardManager.getPrimaryClip();

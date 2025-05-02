@@ -6,9 +6,9 @@
     <string name="app_copyright" translatable="false">\u00A9 2021 mvxGREEN</string>
     <string name="mvxgreen_email" translatable="false">mvxgreen@gmail.com</string>
     // urls
-    <string name="hint_searchbar_url" translatable="false">https://example.com…/video</string>
+    <string name="hint_searchbar_url" translatable="false">https://…</string>
     <string name="frag_hint_valid_urls" translatable="false"><i>Supported URLs:
-    \n\u2022 https://example.com…/video</i></string>
+    \n\u2022 https://…</i></string>
     <string name="mp3_sample_url" translatable="false">
         https://github.com/rafaelreis-hotmart/Audio-Sample-files/raw/master/sample.mp3</string>
     // keys
@@ -79,6 +79,7 @@
     <string name="prefs_key_title">VIDEO_TITLE</string>
     <string name="prefs_key_thumbnail_url">THUMBNAIL_URL</string>
     <string name="prefs_key_token">TOKEN</string>
+    <string name="prefs_key_format_id">FORMAT_ID</string>
 
     // privacy policy
     <string-array name="pp_body" translatable="false">

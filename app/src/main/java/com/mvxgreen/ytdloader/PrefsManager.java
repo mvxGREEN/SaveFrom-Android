@@ -25,7 +25,8 @@ public class PrefsManager {
             R.string.prefs_key_original_url,
             R.string.prefs_key_title,
             R.string.prefs_key_thumbnail_url,
-            R.string.prefs_key_token
+            R.string.prefs_key_token,
+
     };
 
     /**
@@ -191,6 +192,22 @@ public class PrefsManager {
         return sharedPrefs.getString("FILE_EXTENSION", "");
     }
 
+    public String getFormatId() {
+        return sharedPrefs.getString("FORMAT_ID", "");
+    }
+
+    public void setFormatId(String value) {
+        String key = "FORMAT_ID";
+
+        Log.i(TAG, "set " + key + " in shared prefs: {" + key + "," + value + "}");
+
+        SharedPreferences.Editor editor = sharedPrefs.edit();
+        editor.putString(
+                key,
+                value
+        );
+        editor.apply();
+    }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  COUNT RUNS  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     public void incrementTotalRuns() {
