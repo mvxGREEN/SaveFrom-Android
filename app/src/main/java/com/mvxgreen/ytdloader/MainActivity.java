@@ -4,10 +4,12 @@ import static com.mvxgreen.ytdloader.MediaManager.MIME_MP4;
 
 import android.Manifest;
 import android.app.Dialog;
+import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Animatable;
 import android.net.Uri;
@@ -59,18 +61,24 @@ import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = MainActivity.class.getCanonicalName(),
-            ABS_PATH_DOCS = Environment.getExternalStoragePublicDirectory(
+    private static final String TAG = MainActivity.class.getCanonicalName();
+    public static final String ABS_PATH_DOCS = Environment.getExternalStoragePublicDirectory(
                             Environment.DIRECTORY_DOCUMENTS)
                     .getAbsolutePath() + "/";
 
+    public static MainActivity activityCurrent;
     public ActivityMainBinding mBinding;
     Animation fadeIn, fadeOut;
     FileFragment fileFragment;
 
     PrefsManager mPrefsManager;
+    FinishReceiver mFinishReceiver;
 
     AndroidPlatform androidPlatform;
+
+    public MainActivity() {
+        activityCurrent = this;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,27 +103,45 @@ public class MainActivity extends AppCompatActivity {
 
         // check permissions
         hasPermissions();
+
+        // register receivers
+        mFinishReceiver = new FinishReceiver();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(mFinishReceiver, new IntentFilter("69"), RECEIVER_EXPORTED);
+        } else {
+            registerReceiver(mFinishReceiver, new IntentFilter("69"));
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        // unregister receivers
+        try {
+            unregisterReceiver(mFinishReceiver);
+        } catch (Exception ignored) {}
+        super.onDestroy();
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  PERMISSIONS  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    public static String[] storage_permissions = {
+    public static String[] req_permissions_old = {
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.READ_EXTERNAL_STORAGE
     };
 
     @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
-    public static String[] storage_permissions_33 = {
+    public static String[] req_permissions = {
             Manifest.permission.READ_MEDIA_IMAGES,
             Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.READ_MEDIA_VIDEO
+            Manifest.permission.READ_MEDIA_VIDEO,
+            Manifest.permission.POST_NOTIFICATIONS
     };
 
     public static String[] permissions() {
         String[] p;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            p = storage_permissions_33;
+            p = req_permissions;
         } else {
-            p = storage_permissions;
+            p = req_permissions_old;
         }
         return p;
     }
@@ -260,15 +286,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static void setProgress(MainActivity mainActivity, String prog) {
+    public static void setProgress(String prog) {
         Log.i(TAG, "setProgress: " + prog);
         prog = prog.trim().replace("%", "");
         int p = (int)Double.parseDouble(prog);
 
-        // TODO parse/convert prog into int and update ui
-        mainActivity.runOnUiThread(() -> {
-            mainActivity.mBinding.numProgress.setVisibility(View.VISIBLE);
-            mainActivity.mBinding.numProgress.setProgress(p);
+        // update progress ui
+        MainActivity.activityCurrent.runOnUiThread(() -> {
+            MainActivity.activityCurrent.mBinding.numProgress.setVisibility(View.VISIBLE);
+            MainActivity.activityCurrent.mBinding.numProgress.setProgress(p);
         });
     }
 
@@ -500,12 +526,6 @@ public class MainActivity extends AppCompatActivity {
         mBinding.filenameEdittext.setText(fileName);
     }
 
-
-    private void downloadVideo(String videoUrl) {
-        // run async
-        new DownloadVideoTask().execute(videoUrl);
-    }
-
     private void loadVideoInfo(String url) {
         String titleStr = "", extStr = "", thumbStr ="";
 
@@ -562,121 +582,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    //async method to extract audio from video in background
-    private class DownloadVideoTask extends AsyncTask<String, Void, String> {
-
-        public DownloadVideoTask() {
-            Log.i(TAG, "DownloadVideoTask()");
-        }
-
-        //this method will download the audio file by using python script
-        @Override
-        protected String doInBackground(String... urls) {
-            Log.i(TAG, "doInBackground()");
-            String videoUrl = urls[0];
-
-            Python py = Python.getInstance();
-            PyObject pyObject = py.getModule("vidloader");
-
-            String res = "";
-            try {
-                Log.i(TAG, "trying download with audio...");
-                PyObject result = pyObject.callAttr("dl_video_with_audio",MainActivity.this, videoUrl, ABS_PATH_DOCS, mPrefsManager.getFileName());
-                res = result.toString();
-                Log.i(TAG, "format_ids: "+ res);
-                mPrefsManager.setFormatId(res);
-            } catch (Exception e) {
-                e.printStackTrace();
-                String msg = "error downloading video! e="+e;
-                Log.e(TAG, msg);
-                runOnUiThread(() -> {
-                    Toast.makeText(MainActivity.this, "unknown error",
-                            Toast.LENGTH_SHORT).show();
-                    showEmptyLayout();
-                });
-            }
-
-            // merge if necessary
-            if (mPrefsManager.getFormatId().contains("+")) {
-                // split format ids
-                String fIds = mPrefsManager.getFormatId();
-                String fIdVideo = fIds.substring(0, fIds.indexOf("+"));
-                String fIdAudio = fIds.substring(fIds.indexOf("+")+1);
-
-                // build filepaths
-                String absFilepath = ABS_PATH_DOCS + mPrefsManager.getFileName() + ".mp4";
-                String absFilepathVideo = absFilepath + ".f" + fIdVideo;
-                String absFilepathAudio = absFilepath + ".f" + fIdAudio;
-
-                // append file extensions
-                File v = new File(absFilepathVideo+".webm");
-                File a = new File(absFilepathAudio+".webm");
-                if (v.exists()) {
-                    Log.i(TAG, ".webm video file detected");
-                    absFilepathVideo = absFilepathVideo+".webm";
-                } else {
-                    Log.i(TAG, ".mp4 video file detected");
-                    absFilepathVideo = absFilepathVideo+".mp4";
-                }
-                if (a.exists()) {
-                    Log.i(TAG, ".webm audio file detected");
-                    absFilepathAudio = absFilepathAudio+".webm";
-                } else {
-                    Log.i(TAG, ".mp4 video file detected");
-                    absFilepathAudio = absFilepathAudio+".mp4";
-                }
-
-                // run ffmpeg merge
-                ConcatRunner.merge(MainActivity.this, absFilepath, absFilepathVideo, absFilepathAudio);
-                // delete temp files
-                ConcatRunner.deleteTempFiles(absFilepathVideo, absFilepathAudio);
-            }
-
-            return res;
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            Log.i(TAG, "OnPostExecute format_id=" + s);
-
-            // scan new media
-            String ext = mPrefsManager.getFileExt();
-            String absFilePath = ABS_PATH_DOCS + mPrefsManager.getFileName() + "." + ext;
-            Log.i(TAG, "absolute filepath: " + absFilePath);
-
-            File dl = new File(absFilePath);
-            if (dl.exists()) {
-                FileTime now = null;
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    now = FileTime.fromMillis(System.currentTimeMillis());
-                    try {
-                        Files.setLastModifiedTime(dl.toPath(), now);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-            }
-
-            new MediaManager(MainActivity.this,
-                    absFilePath, MIME_MP4).scanMedia();
-
-            mPrefsManager.incrementTotalRuns();
-            int runs = mPrefsManager.getTotalRuns();
-
-            if (runs%3==1) {
-                showRateAd();
-            }
-
-            runOnUiThread(() -> {
-                Toast.makeText(MainActivity.this, "Download finished!",
-                        Toast.LENGTH_SHORT).show();
-
-                showFinishLayout();
-            });
-        }
-    }
-
     /**
      * Respond to clicks on paste button
      * @param v clicked view
@@ -708,16 +613,24 @@ public class MainActivity extends AppCompatActivity {
     public void onDownloadClick(View v) {
         Log.i(TAG, ".onDownloadClicked()");
 
-        // check permissions before starting download
-        if (!hasPermissions()) {
-            Toast.makeText(v.getContext(), "Missing permission to\nwrite to storage", Toast.LENGTH_LONG).show();
-            return;
+        showDownloadingLayout();
+
+        // start download service
+        Intent intent = new Intent(MainActivity.this, DownloadService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            MainActivity.this.startForegroundService(intent);
+        } else {
+            // or use regular task if android version too low
+            new Thread(() -> {
+                new DlVideoTaskTemp().execute();
+            }).start();
         }
 
-        showDownloadingLayout();
+        /* TODO remove if service works
         new Thread(() -> {
             downloadVideo(mPrefsManager.getOriginalUrl());
         }).start();
+         */
     }
 
     public void showRateAd() {
@@ -770,4 +683,144 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private class FinishReceiver extends BroadcastReceiver {
+        private final String TAG = FinishReceiver.class.getCanonicalName();
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.i(TAG, "onReceive");
+            String absFilePath = intent.getStringExtra("FILEPATH");
+
+            // show error UI if missing filepath
+            if (absFilePath == null || absFilePath.isEmpty()) {
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, "unknown error", Toast.LENGTH_LONG).show();
+                    showEmptyLayout();
+                });
+            }
+
+            // scan new media
+            new MediaManager(MainActivity.this,
+                    absFilePath, MIME_MP4).scanMedia();
+
+            // count runs
+            mPrefsManager.incrementTotalRuns();
+            int runs = mPrefsManager.getTotalRuns();
+
+            // show rate dialog ?
+            if (runs%3==1) {
+                showRateAd();
+            }
+
+            // update ui
+            runOnUiThread(() -> {
+                Toast.makeText(MainActivity.this, "Download finished!",
+                        Toast.LENGTH_SHORT).show();
+                showFinishLayout();
+            });
+
+            //unregisterReceiver(this);
+        }
+    }
+
+    private class DlVideoTaskTemp extends AsyncTask<String, Void, String> {
+
+        public DlVideoTaskTemp() {
+            Log.i(TAG, "DlVideoTaskTemp()");
+        }
+
+        //this method will download the audio file by using python script
+        @Override
+        protected String doInBackground(String... urls) {
+            Log.i(TAG, "doInBackground()");
+            String videoUrl = urls[0];
+
+            Python py = Python.getInstance();
+            PyObject pyObject = py.getModule("vidloader");
+
+            String res = "";
+            try {
+                Log.i(TAG, "trying download with audio...");
+                PyObject result = pyObject.callAttr("dl_video_with_audio",MainActivity.activityCurrent, videoUrl, ABS_PATH_DOCS, mPrefsManager.getFileName());
+                res = result.toString();
+                Log.i(TAG, "format_ids: "+ res);
+                mPrefsManager.setFormatId(res);
+            } catch (Exception e) {
+                e.printStackTrace();
+                String msg = "error downloading video! e="+e;
+                Log.e(TAG, msg);
+
+                // send finish broadcast without filepath
+                Intent intent = new Intent("69");
+                intent.putExtra("FILEPATH", "");
+                sendBroadcast(intent);
+            }
+
+            // merge if necessary
+            if (mPrefsManager.getFormatId().contains("+")) {
+                // split format ids
+                String fIds = mPrefsManager.getFormatId();
+                String fIdVideo = fIds.substring(0, fIds.indexOf("+"));
+                String fIdAudio = fIds.substring(fIds.indexOf("+")+1);
+
+                // build filepaths
+                String absFilepath = ABS_PATH_DOCS + mPrefsManager.getFileName() + ".mp4";
+                String absFilepathVideo = absFilepath + ".f" + fIdVideo;
+                String absFilepathAudio = absFilepath + ".f" + fIdAudio;
+
+                // append file extensions
+                File v = new File(absFilepathVideo+".webm");
+                File a = new File(absFilepathAudio+".webm");
+                if (v.exists()) {
+                    Log.i(TAG, ".webm video file detected");
+                    absFilepathVideo = absFilepathVideo+".webm";
+                } else {
+                    Log.i(TAG, ".mp4 video file detected");
+                    absFilepathVideo = absFilepathVideo+".mp4";
+                }
+                if (a.exists()) {
+                    Log.i(TAG, ".webm audio file detected");
+                    absFilepathAudio = absFilepathAudio+".webm";
+                } else {
+                    Log.i(TAG, ".mp4 video file detected");
+                    absFilepathAudio = absFilepathAudio+".mp4";
+                }
+
+                // run ffmpeg merge
+                ConcatRunner.merge(absFilepath, absFilepathVideo, absFilepathAudio);
+
+                // delete temp files
+                ConcatRunner.deleteTempFiles(absFilepathVideo, absFilepathAudio);
+            }
+
+            return res;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            Log.i(TAG, "OnPostExecute format_id=" + s);
+
+            // scan new media
+            String ext = mPrefsManager.getFileExt();
+            String absFilePath = ABS_PATH_DOCS + mPrefsManager.getFileName() + "." + ext;
+            Log.i(TAG, "absolute filepath: " + absFilePath);
+
+            File dl = new File(absFilePath);
+            if (dl.exists()) {
+                FileTime now = null;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    now = FileTime.fromMillis(System.currentTimeMillis());
+                    try {
+                        Files.setLastModifiedTime(dl.toPath(), now);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+            }
+
+            Intent intent = new Intent("69");
+            intent.putExtra("FILEPATH", absFilePath);
+            sendBroadcast(intent);
+        }
+    }
 }

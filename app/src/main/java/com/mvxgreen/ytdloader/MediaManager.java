@@ -41,7 +41,6 @@ public class MediaManager implements
     }
 
     public void onScanCompleted(String path, Uri uri) {
-        // send broadcast to MainActivity.3FinishReceiver to update ui
-        main.sendBroadcast(new Intent(String.valueOf(69)));
+        Log.i(TAG, "onScanCompleted");
     }
 }

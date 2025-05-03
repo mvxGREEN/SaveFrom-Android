@@ -27,9 +27,9 @@ def dl_video_with_audio(activity, video_url, out, filename):
 def create_progress_hook(a):
     def progress_hook(d):
         if d['status'] == 'downloading':
-            MainActivity.setProgress(a, d['_percent_str'])
+            MainActivity.setProgress(d['_percent_str'])
         if d['status'] == 'finished':
-            MainActivity.setProgress(a, d['_percent_str'])
+            MainActivity.setProgress(d['_percent_str'])
     return progress_hook
 
 

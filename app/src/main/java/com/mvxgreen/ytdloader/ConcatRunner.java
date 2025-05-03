@@ -26,7 +26,7 @@ public final class ConcatRunner {
     public static int totalChunks = 0, downloadedChunks = 0;
     private static String command;
 
-    public static void merge(MainActivity main, String filepath, String vFilepath, String aFilepath) {
+    public static void merge(String filepath, String vFilepath, String aFilepath) {
         String msg = "MERGING:\nfilepath=" + filepath
                 + "\nvFilepath=" + vFilepath
                 + "\naFilepath=" + aFilepath;

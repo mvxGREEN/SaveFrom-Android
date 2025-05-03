@@ -1,7 +1,7 @@
 <resources>
     // app
-    <string name="app_name" translatable="false">VideoLoader</string>
-    <string name="app_name_official" translatable="false">Video Downloader</string>
+    <string name="app_name" translatable="false">SaveFrom</string>
+    <string name="app_name_official" translatable="false">SaveFrom: Video Downloader</string>
     <string name="app_version" translatable="false">Version 1.1.1</string>
     <string name="app_copyright" translatable="false">\u00A9 2021 mvxGREEN</string>
     <string name="mvxgreen_email" translatable="false">mvxgreen@gmail.com</string>
