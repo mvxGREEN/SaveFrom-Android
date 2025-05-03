@@ -190,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
                     killKeyboard();
 
                     if (!isValid) {
-                        Toast.makeText(MainActivity.this, "Please paste a video link", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Please copy a video URL", Toast.LENGTH_SHORT).show();
                     }
 
                     showLoadingLayout();
@@ -504,7 +504,6 @@ public class MainActivity extends AppCompatActivity {
     private void downloadVideo(String videoUrl) {
         // run async
         new DownloadVideoTask().execute(videoUrl);
-
     }
 
     private void loadVideoInfo(String url) {
@@ -550,12 +549,7 @@ public class MainActivity extends AppCompatActivity {
         mPrefsManager.setThumbnailUrl(thumbStr);
         mPrefsManager.setFileExt(extStr);
 
-        runOnUiThread(() -> {
-            Toast.makeText(MainActivity.this, "Download prepared!",
-                    Toast.LENGTH_SHORT).show();
-
-            showPreviewLayout();
-        });
+        runOnUiThread(this::showPreviewLayout);
     }
 
     public static void printLongLog(String l) {
@@ -587,8 +581,6 @@ public class MainActivity extends AppCompatActivity {
             String res = "";
             try {
                 Log.i(TAG, "trying download with audio...");
-
-                // download with audio
                 PyObject result = pyObject.callAttr("dl_video_with_audio",MainActivity.this, videoUrl, ABS_PATH_DOCS, mPrefsManager.getFileName());
                 res = result.toString();
                 Log.i(TAG, "format_ids: "+ res);
@@ -610,12 +602,34 @@ public class MainActivity extends AppCompatActivity {
                 String fIds = mPrefsManager.getFormatId();
                 String fIdVideo = fIds.substring(0, fIds.indexOf("+"));
                 String fIdAudio = fIds.substring(fIds.indexOf("+")+1);
-                // append format ids to separate filenames
+
+                // build filepaths
                 String absFilepath = ABS_PATH_DOCS + mPrefsManager.getFileName() + ".mp4";
                 String absFilepathVideo = absFilepath + ".f" + fIdVideo;
                 String absFilepathAudio = absFilepath + ".f" + fIdAudio;
-                // merge with ffmpeg
+
+                // append file extensions
+                File v = new File(absFilepathVideo+".webm");
+                File a = new File(absFilepathAudio+".webm");
+                if (v.exists()) {
+                    Log.i(TAG, ".webm video file detected");
+                    absFilepathVideo = absFilepathVideo+".webm";
+                } else {
+                    Log.i(TAG, ".mp4 video file detected");
+                    absFilepathVideo = absFilepathVideo+".mp4";
+                }
+                if (a.exists()) {
+                    Log.i(TAG, ".webm audio file detected");
+                    absFilepathAudio = absFilepathAudio+".webm";
+                } else {
+                    Log.i(TAG, ".mp4 video file detected");
+                    absFilepathAudio = absFilepathAudio+".mp4";
+                }
+
+                // run ffmpeg merge
                 ConcatRunner.merge(MainActivity.this, absFilepath, absFilepathVideo, absFilepathAudio);
+                // delete temp files
+                ConcatRunner.deleteTempFiles(absFilepathVideo, absFilepathAudio);
             }
 
             return res;
@@ -625,7 +639,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String s) {
             Log.i(TAG, "OnPostExecute format_id=" + s);
 
-            // scan media
+            // scan new media
             String ext = mPrefsManager.getFileExt();
             String absFilePath = ABS_PATH_DOCS + mPrefsManager.getFileName() + "." + ext;
             Log.i(TAG, "absolute filepath: " + absFilePath);
@@ -681,7 +695,7 @@ public class MainActivity extends AppCompatActivity {
 
             mBinding.mainSearchBar.setText(primaryStr);
         } else {
-            Toast.makeText(MainActivity.this, getString(R.string.msg_no_url_copied),
+            Toast.makeText(MainActivity.this, "Please copy a video link",
                     Toast.LENGTH_LONG).show();
 
             mBinding.mainSearchBar.setText(primaryStr);

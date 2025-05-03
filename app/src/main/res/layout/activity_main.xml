@@ -197,7 +197,6 @@
                                 app:layout_constraintBottom_toBottomOf="parent"
                                 android:importantForAutofill="no"
                                 android:inputType="text"
-                                android:hint="@string/hint_filename"
                                 android:textColorHint="@color/shadowInverseLight"
                                 android:textAppearance="@style/TextAppMain"
                                 android:textSize="17sp"

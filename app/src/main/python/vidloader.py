@@ -24,26 +24,6 @@ def dl_video_with_audio(activity, video_url, out, filename):
         info_dict = ydl.extract_info(video_url, download=True)
         return info_dict['format_id']
 
-def dl_video_without_audio(activity, video_url, out, filename):
-    # 'outtmpl': out + '%(title).25s.%(ext)s',
-    progress_hook = create_progress_hook(activity)
-    # prevent overwrite with random id
-    #
-
-    # 'format': "bestvideo,bestaudio",
-    # 'outtmpl': out + filename_id + '%(title).20s.f%(format_id)s.%(ext)s',
-
-    ydl_opts = {
-        'outtmpl': out + filename + '.mp4',
-        'restrictfilenames': True,
-        "cachedir": False,
-        "ignoreerrors": True,
-        'progress_hooks': [progress_hook]
-    }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info_dict = ydl.extract_info(video_url, download=True)
-        return info_dict['format_id']
-
 def create_progress_hook(a):
     def progress_hook(d):
         if d['status'] == 'downloading':
@@ -54,7 +34,7 @@ def create_progress_hook(a):
 
 
 def extract_video_title(video_url):
-    filename_id = f"{random.randint(1,10)}{random.randint(1,10)}{random.randint(1,10)}{random.randint(1,10)}_"
+    filename_id = f"{random.randint(0,9)}{random.randint(0,9)}{random.randint(0,9)}{random.randint(0,9)}_"
     ydl_opts = {
         'restrictfilenames': True,
         "cachedir": False,

@@ -38,8 +38,6 @@
     <string name="msg_no_internet">Please connect to the internet</string>
     <string name="msg_open_file">Open file…</string>
     <string name="msg_downloading">Downloading…</string>
-    <string name="msg_no_url_copied">No URL to paste…</string>
-    <string name="msg_downloading_sample">Downloading sample…</string>
 
     // hints
     <string name="hint_main">Paste URL</string>
