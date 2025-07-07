@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace 'com.mvxgreen.ytdloader'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.mvxgreen.ytdloader"
         minSdk 24
-        targetSdk 34
-        versionCode 6
-        versionName "1.4.4"
+        targetSdk 35
+        versionCode 8
+        versionName "2.2.3"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -69,7 +69,7 @@ android {
 dependencies {
 // general
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
@@ -81,13 +81,12 @@ dependencies {
     implementation 'com.github.varunest:TheGlowingLoader:1.0.7'
     implementation 'com.github.mancj:MaterialSearchBar:0.8.5'
     implementation 'com.daimajia.numberprogressbar:library:1.4@aar'
-    implementation 'pl.droidsonroids.gif:android-gif-drawable:1.2.23'
     implementation 'org.jsoup:jsoup:1.15.3'
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
-    implementation 'com.arthenica:ffmpeg-kit-min:6.0-2'
+    //implementation 'com.arthenica:ffmpeg-kit-min:6.0-2'
 
     // google
-    implementation platform('com.google.firebase:firebase-bom:33.13.0')
+    implementation platform('com.google.firebase:firebase-bom:33.16.0')
     implementation 'com.google.firebase:firebase-analytics'
 
     /*

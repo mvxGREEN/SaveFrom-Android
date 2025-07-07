@@ -1,4 +1,5 @@
 import yt_dlp
+#import ffmpeg
 import re
 import random
 from com.chaquo.python import Python
@@ -14,6 +15,7 @@ def dl_video_with_audio(activity, video_url, out, filename):
     # 'outtmpl': out + filename_id + '%(title).20s.f%(format_id)s.%(ext)s',
 
     ydl_opts = {
+        'format': "bestvideo[height<=2160]",
         'outtmpl': out + filename + '.mp4',
         'restrictfilenames': True,
         "cachedir": False,
@@ -47,7 +49,7 @@ def extract_video_title(video_url):
 
 def extract_video_ext(video_url):
     ydl_opts = {
-        'format': "bestvideo[height<=1080]",
+        'format': "bestvideo[height<=2160]",
         'restrictfilenames': True,
         "cachedir": False,
         "ignoreerrors": True,

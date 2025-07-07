@@ -2,10 +2,6 @@ package com.mvxgreen.ytdloader;
 
 import android.util.Log;
 
-import com.arthenica.ffmpegkit.FFmpegKit;
-import com.arthenica.ffmpegkit.FFmpegSession;
-import com.arthenica.ffmpegkit.ReturnCode;
-
 import java.io.File;
 
 public final class ConcatRunner {
@@ -26,7 +22,7 @@ public final class ConcatRunner {
     public static int totalChunks = 0, downloadedChunks = 0;
     private static String command;
 
-    public static void merge(String filepath, String vFilepath, String aFilepath) {
+    public static void mergeFfmpeg(String filepath, String vFilepath, String aFilepath) {
         String msg = "MERGING:\nfilepath=" + filepath
                 + "\nvFilepath=" + vFilepath
                 + "\naFilepath=" + aFilepath;
@@ -43,6 +39,8 @@ public final class ConcatRunner {
 
         // run ffmpeg command
         Log.i(TAG, "running ffmpeg command: " + command);
+
+        /*
         FFmpegSession session = FFmpegKit.execute(command);
         int result = session.getReturnCode().getValue();
 
@@ -54,6 +52,7 @@ public final class ConcatRunner {
         }
 
         deleteTempFiles(vFilepath, aFilepath);
+        */
     }
 
     /**

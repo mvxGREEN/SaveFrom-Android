@@ -1,7 +1,6 @@
 package com.mvxgreen.ytdloader;
 
 import static com.mvxgreen.ytdloader.MainActivity.ABS_PATH_DOCS;
-import static com.mvxgreen.ytdloader.MediaManager.MIME_MP4;
 
 import android.app.ForegroundServiceStartNotAllowedException;
 import android.app.Notification;
@@ -17,8 +16,6 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
-import android.view.View;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -26,7 +23,6 @@ import androidx.core.app.ServiceCompat;
 
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
-import com.mvxgreen.ytdloader.databinding.ActivityMainBinding;
 
 import java.io.File;
 import java.io.IOException;
@@ -157,7 +153,7 @@ public class DownloadService extends Service {
                 }
 
                 // run ffmpeg merge
-                ConcatRunner.merge(absFilepath, absFilepathVideo, absFilepathAudio);
+                ConcatRunner.mergeFfmpeg(absFilepath, absFilepathVideo, absFilepathAudio);
 
                 // delete temp files
                 ConcatRunner.deleteTempFiles(absFilepathVideo, absFilepathAudio);
