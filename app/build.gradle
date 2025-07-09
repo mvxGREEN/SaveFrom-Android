@@ -89,6 +89,8 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.16.0')
     implementation 'com.google.firebase:firebase-analytics'
 
+    implementation "com.android.billingclient:billing:8.0.0"
+
     /*
     // google
     implementation 'com.google.firebase:firebase-crashlytics'
