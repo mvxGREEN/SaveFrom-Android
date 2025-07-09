@@ -56,6 +56,7 @@ import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.BillingResult;
+import com.android.billingclient.api.PendingPurchasesParams;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.ProductDetailsResponseListener;
 import com.android.billingclient.api.Purchase;
@@ -106,11 +107,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         }
     };
     public static boolean MIsGold = false;
-    private BillingClient billingClient = BillingClient.newBuilder(MainActivity.this)
-            .setListener(purchasesUpdatedListener)
-            //.enablePendingPurchases()
-            .enableAutoServiceReconnection()
-            .build();
+    private BillingClient billingClient;
 
     private BillingFlowParams MBillingFlowParams;
 
@@ -173,6 +170,11 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
     public void startBillingConnection() {
         Log.i(TAG, "startBillingConnection");
+        billingClient = BillingClient.newBuilder(MainActivity.this)
+                .setListener(purchasesUpdatedListener)
+                .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().enablePrepaidPlans().build())
+                .enableAutoServiceReconnection()
+                .build();
         billingClient.startConnection(new BillingClientStateListener() {
             @Override
             public void onBillingSetupFinished(BillingResult billingResult) {
@@ -183,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                                     .setProductList(
                                             ImmutableList.of(
                                                     QueryProductDetailsParams.Product.newBuilder()
-                                                            .setProductId("product_id_example")
+                                                            .setProductId("savefrom_gold")
                                                             .setProductType(BillingClient.ProductType.SUBS)
                                                             .build()))
                                     .build();
