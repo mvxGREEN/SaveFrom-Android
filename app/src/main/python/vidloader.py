@@ -5,17 +5,12 @@ import random
 from com.chaquo.python import Python
 from com.mvxgreen.ytdloader import MainActivity
 
-def dl_video_with_audio(activity, video_url, out, filename):
+def dl_video_with_audio(activity, video_url, out, filename, resolution):
     # 'outtmpl': out + '%(title).25s.%(ext)s',
     progress_hook = create_progress_hook(activity)
-    # prevent overwrite with random id
-    #
-
-    # 'format': "bestvideo,bestaudio",
-    # 'outtmpl': out + filename_id + '%(title).20s.f%(format_id)s.%(ext)s',
 
     ydl_opts = {
-        'format': "bestvideo[height<=2160]",
+        'format': "bestvideo[height<=" + resolution + "]",
         'outtmpl': out + filename + '.mp4',
         'restrictfilenames': True,
         "cachedir": False,
@@ -35,9 +30,12 @@ def create_progress_hook(a):
     return progress_hook
 
 
-def extract_video_title(video_url):
+def extract_video_title(video_url, resolution):
+    # prevent overwrite with random id
     filename_id = f"{random.randint(0,9)}{random.randint(0,9)}{random.randint(0,9)}{random.randint(0,9)}_"
+
     ydl_opts = {
+        'format': "bestvideo[height<=" + resolution + "]",
         'restrictfilenames': True,
         "cachedir": False,
         "ignoreerrors": True,
@@ -48,8 +46,9 @@ def extract_video_title(video_url):
         return filename
 
 def extract_video_ext(video_url):
+
     ydl_opts = {
-        'format': "bestvideo[height<=2160]",
+        #'format': "bestvideo[height<=" + resolution + "]",
         'restrictfilenames': True,
         "cachedir": False,
         "ignoreerrors": True,
@@ -59,8 +58,9 @@ def extract_video_ext(video_url):
         return info_dict['ext']
 
 def extract_video_dl_url(video_url):
+
     ydl_opts = {
-        'format': "bestvideo[height<=2160]",
+        # 'format': "bestvideo[height<=" + resolution + "]",
         'restrictfilenames': True,
         "cachedir": False,
         "ignoreerrors": True,
@@ -69,9 +69,9 @@ def extract_video_dl_url(video_url):
         info_dict = ydl.extract_info(video_url, download=False)
         return info_dict['url']
 
-def extract_video_thumbnail(video_url):
+def extract_video_thumbnail(video_url, resolution):
     ydl_opts = {
-        #'format': "bestvideo",
+        'format': "bestvideo[height<=" + resolution + "]",
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(video_url, download=False)

@@ -1,6 +1,7 @@
 package com.mvxgreen.ytdloader;
 
 import static com.mvxgreen.ytdloader.MainActivity.ABS_PATH_DOCS;
+import static com.mvxgreen.ytdloader.MainActivity.mResolution;
 
 import android.app.ForegroundServiceStartNotAllowedException;
 import android.app.Notification;
@@ -107,7 +108,12 @@ public class DownloadService extends Service {
             String res = "";
             try {
                 Log.i(TAG, "trying download with audio...");
-                PyObject result = pyObject.callAttr("dl_video_with_audio",MainActivity.activityCurrent, videoUrl, ABS_PATH_DOCS, prefsManager.getFileName());
+                PyObject result = pyObject.callAttr("dl_video_with_audio",
+                        MainActivity.activityCurrent,
+                        videoUrl,
+                        ABS_PATH_DOCS,
+                        prefsManager.getFileName(),
+                        mResolution);
                 res = result.toString();
                 Log.i(TAG, "format_ids: "+ res);
                 prefsManager.setFormatId(res);

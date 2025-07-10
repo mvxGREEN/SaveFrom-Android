@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
     boolean isBackgroundEnabled = false;
 
-    static String MResolution = "1080p";
+    static String mResolution = "1080p";
 
     // BILLING
     private PurchasesUpdatedListener purchasesUpdatedListener = new PurchasesUpdatedListener() {
@@ -847,13 +847,13 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         // extract video information
 
         try {
-            PyObject title = pyObject.callAttr("extract_video_title", url);
+            PyObject title = pyObject.callAttr("extract_video_title", url, mResolution);
             titleStr = title.toString();
             if (titleStr.length() > 25) {
                 titleStr = titleStr.substring(0, 25);
             }
 
-            PyObject thumbnail = pyObject.callAttr("extract_video_thumbnail", url);
+            PyObject thumbnail = pyObject.callAttr("extract_video_thumbnail", url, mResolution);
             thumbStr = thumbnail.toString();
             //PyObject ext = pyObject.callAttr("extract_video_ext", url);
             //extStr = ext.toString();
@@ -1009,7 +1009,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         Log.i(TAG, "onItemSelected position=" + position);
         String spinnerItem = parent.getSelectedItem().toString();
         Log.i(TAG, "spinnerItem=" + spinnerItem);
-        MResolution = spinnerItem;
+        mResolution = spinnerItem;
     }
 
     @Override
