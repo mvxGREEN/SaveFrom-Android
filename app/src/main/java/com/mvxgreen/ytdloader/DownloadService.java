@@ -130,15 +130,26 @@ public class DownloadService extends Service {
 
             // merge if necessary
             if (prefsManager.getFormatId().contains("+")) {
+
+            }
+
+            return res;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            Log.i(TAG, "OnPostExecute format_id=" + s);
+
+            try {
                 // split format ids
                 String fIds = prefsManager.getFormatId();
-                String fIdVideo = fIds.substring(0, fIds.indexOf("+"));
-                String fIdAudio = fIds.substring(fIds.indexOf("+")+1);
+                Log.i(TAG, "fIds=" + fIds);
 
                 // build filepaths
-                String absFilepath = ABS_PATH_DOCS + prefsManager.getFileName() + ".mp4";
-                String absFilepathVideo = absFilepath + ".f" + fIdVideo;
-                String absFilepathAudio = absFilepath + ".f" + fIdAudio;
+                String absFilepath = ABS_PATH_DOCS + prefsManager.getFileName();
+                String absFilepathVideo = absFilepath;
+                String absFilepathAudio = absFilepath;
+                absFilepath = absFilepath + ".mp4";
 
                 // append file extensions
                 File v = new File(absFilepathVideo+".webm");
@@ -154,23 +165,22 @@ public class DownloadService extends Service {
                     Log.i(TAG, ".webm audio file detected");
                     absFilepathAudio = absFilepathAudio+".webm";
                 } else {
-                    Log.i(TAG, ".mp4 video file detected");
-                    absFilepathAudio = absFilepathAudio+".mp4";
+                    Log.i(TAG, ".m4a audio file detected");
+                    absFilepathAudio = absFilepathAudio+".m4a";
                 }
 
+                Log.i(TAG, "absFilePathVideo=" + absFilepathVideo
+                        + ", absFilePathAudio=" + absFilepathAudio);
+
                 // run ffmpeg merge
-                ConcatRunner.mergeFfmpeg(absFilepath, absFilepathVideo, absFilepathAudio);
+                ConcatRunner.mergeAV(absFilepath, absFilepathVideo, absFilepathAudio);
 
                 // delete temp files
                 ConcatRunner.deleteTempFiles(absFilepathVideo, absFilepathAudio);
+            } catch (Exception e) {
+                Log.e(TAG, "merge failed!");
+                e.printStackTrace();
             }
-
-            return res;
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            Log.i(TAG, "OnPostExecute format_id=" + s);
 
             // scan new media
             String ext = prefsManager.getFileExt();
@@ -254,7 +264,7 @@ public class DownloadService extends Service {
         }
         PendingIntent pi = PendingIntent.getActivity(MainActivity.activityCurrent, pendingIntentId++, intent, pendingIntentFlags);
         Notification notification = new NotificationCompat.Builder(DownloadService.this, "SaveFrom")
-                .setContentTitle("SaveFrom is downloading…")
+                .setContentTitle("Downloading Video…")
                 .setSmallIcon(R.drawable.downloader_raw)
                 .setProgress(max_progress, progress, false)
                 .setOngoing(true)

@@ -12,13 +12,14 @@ def dl_video_with_audio(activity, video_url, out, filename, resolution):
     # 'format': "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
 
     ydl_opts = {
-        'format': "bestvideo[height<=" + resolution + "]",
-        'outtmpl': out + filename + '.mp4',
+        'format': "bestaudio[ext=m4a],bestvideo[height<=" + resolution + "]",
+        'outtmpl': out + filename + '.%(ext)s',
         'restrictfilenames': True,
         "cachedir": False,
         "ignoreerrors": True,
         'progress_hooks': [progress_hook]
     }
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(video_url, download=True)
         return info_dict['format_id']
@@ -58,18 +59,6 @@ def extract_video_ext(video_url):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(video_url, download=False)
         return info_dict['ext']
-
-def extract_video_dl_url(video_url):
-
-    ydl_opts = {
-        # 'format': "bestvideo[height<=" + resolution + "]",
-        'restrictfilenames': True,
-        "cachedir": False,
-        "ignoreerrors": True,
-    }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info_dict = ydl.extract_info(video_url, download=False)
-        return info_dict['url']
 
 def extract_video_thumbnail(video_url, resolution):
     ydl_opts = {

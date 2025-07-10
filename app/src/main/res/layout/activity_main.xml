@@ -170,9 +170,8 @@
                             <!-- RESOLUTION SPINNER -->
                             <Spinner
                                 android:id="@+id/res_spinner"
-                                android:layout_width="0dp"
+                                android:layout_width="wrap_content"
                                 android:layout_height="match_parent"
-                                android:layout_weight="0.66"
                                 android:background="@drawable/bg_rounded_sweep_inverse" />
 
                             <!-- FILENAME EDITOR -->
