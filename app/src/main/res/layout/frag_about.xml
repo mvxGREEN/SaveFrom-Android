@@ -30,7 +30,7 @@
         app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
-        android:id="@+id/app_name_tv"
+        android:id="@+id/title_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/app_name_official"
@@ -46,7 +46,7 @@
         app:layout_constraintTop_toBottomOf="@id/logo_about"/>
 
     <TextView
-        android:id="@+id/version_about_tv"
+        android:id="@+id/subtitle_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/app_version"
@@ -54,7 +54,7 @@
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/app_name_tv"/>
+        app:layout_constraintTop_toBottomOf="@id/title_tv"/>
 
     <TextView
         android:id="@+id/copyright_tv"
@@ -66,10 +66,10 @@
         android:textAlignment="center"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/version_about_tv"/>
+        app:layout_constraintTop_toBottomOf="@id/subtitle_tv"/>
 
     <TextView
-        android:id="@+id/email_tv"
+        android:id="@+id/body_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="@dimen/spacing_small"
@@ -86,7 +86,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/spacing_small"
-        app:layout_constraintBottom_toTopOf="@id/email_tv"
+        app:layout_constraintBottom_toTopOf="@id/body_tv"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:text="@string/msg_contact"

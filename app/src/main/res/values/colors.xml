@@ -5,6 +5,9 @@
     <color name="colorPrimaryDark">@color/colorBlack</color>
     <color name="colorAccent">@color/mvxPink</color>
 
+    <color name="colorRed">#ff0000</color>
+    <color name="colorGold">#D4AF37</color>
+
     // General
     <color name="colorWhite">#ffffff</color>
     <color name="colorBlack">#000000</color>
@@ -22,6 +25,10 @@
     <color name="shadowInverseLight">#43ffffff</color>
     <color name="shadowInverse">#93ffffff</color>
     <color name="shadowInverseDark">#C4ffffff</color>
+
+    <color name="shadowGoldLight">#69D4AF37</color>
+    <color name="shadowGold">#83D4AF37</color>
+    <color name="shadowGoldDark">#A9D4AF37</color>
 
     // mvx
     <color name="mvxPink">#FF9999</color>

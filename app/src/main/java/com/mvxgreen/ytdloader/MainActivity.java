@@ -29,6 +29,8 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
@@ -47,6 +49,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -155,12 +158,33 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
     }
 
     @Override
+    protected void onResume() {
+        if (billingClient != null && billingClient.isReady()) {
+            // check purchases
+            checkSubscriptionStatus();
+        } else {
+            // start billing client connection
+            startBillingConnection();
+        }
+
+        super.onResume();
+    }
+
+    @Override
     protected void onDestroy() {
-        // unregister receivers
         try {
             unregisterReceiver(mFinishReceiver);
         } catch (Exception ignored) {}
         super.onDestroy();
+    }
+
+    public void onUpgradeClick(View v) {
+        onUpgradeClick();
+    }
+
+    public void onUpgradeClick() {
+        Log.i(TAG, "onUpgradeClick");
+        launchBillingFlow();
     }
 
     public void launchBillingFlow() {
@@ -230,17 +254,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
             }
             @Override
             public void onBillingServiceDisconnected() {
-                billingClient.startConnection(new BillingClientStateListener() {
-                    @Override
-                    public void onBillingServiceDisconnected() {
-
-                    }
-
-                    @Override
-                    public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
-
-                    }
-                });
+                // TODO restart connection
             }
         });
     }
@@ -299,6 +313,12 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                             editor.apply();
 
                             MIsGold = true;
+
+                            // update ui to gold
+                            MainActivity.this.runOnUiThread(() -> {
+                                MenuItem upgradeItem = (MenuItem)MainActivity.this.findViewById(R.id.action_upgrade);
+                                upgradeItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.diamond_24_gold));
+                            });
                         }
                     }
                 }
@@ -328,7 +348,8 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                     // update ui to gold
                     MainActivity.this.runOnUiThread(() -> {
                         Toast.makeText(MainActivity.this, "Thanks and enjoy <3", Toast.LENGTH_LONG).show();
-                        // TODO fill toolbar item with gold
+                        MenuItem upgradeItem = (MenuItem)MainActivity.this.findViewById(R.id.action_upgrade);
+                        upgradeItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.diamond_24_gold));
                         MainActivity.this.showEmptyLayout();
                     });
                 }
@@ -503,9 +524,26 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         }
     }
 
-    /**
-     * Respond to 'Rate' menu item click
-     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection.
+        switch (item.getItemId()) {
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    public void onUpgradeClick(MenuItem menuItem) {
+        showBigFrag(menuItem);
+    }
+
     public void onRateClick(MenuItem menuItem) {
         final String appPackageName = getPackageName(); // getPackageName() from Context or Activity object
         try {

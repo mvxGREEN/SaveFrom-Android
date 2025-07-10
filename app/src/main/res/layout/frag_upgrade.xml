@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:padding="@dimen/spacing_med"
+    android:background="@color/shadowDark"
+    tools:context=".MainActivity">
+
+    <ImageButton
+        android:id="@+id/btnExit"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginVertical="@dimen/spacing_med"
+        android:layout_marginHorizontal="@dimen/spacing_large"
+        android:elevation="@dimen/spacing_med"
+        android:background="@drawable/ic_round_close_24"
+        android:contentDescription="@string/cont_desc_close"
+        android:onClick="closeBigFrag"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <TextView
+        android:id="@+id/title_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SaveFrom Gold"
+        android:textColor="@color/colorPrimary"
+        android:textSize="24sp"
+        android:textAlignment="center"
+        android:shadowColor="@color/shadow"
+        android:shadowDx="-2"
+        android:shadowDy="-2"
+        android:shadowRadius="2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <TextView
+        android:id="@+id/subtitle_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="HD Video Downloader"
+        android:textColor="@color/shadowInverse"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/title_tv"/>
+
+    <TextView
+        android:id="@+id/body_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginVertical="@dimen/spacing_large"
+        app:layout_constraintTop_toBottomOf="@id/subtitle_tv"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="@string/upgrade_body"
+        android:textColor="@color/shadowInverseDark"
+        android:textSize="@dimen/text_size_frag_body"
+        android:textStyle="italic"
+        android:autoLink="email" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/body_tv"
+        android:layout_marginTop="16dp"
+        android:padding="8dp">
+
+        <Button
+            android:id="@+id/frag_negative_btn"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:text="Nah"
+            android:textColor="@color/shadowInverseDark"
+            android:background="@drawable/bg_rounded_sweep"
+            android:onClick="closeBigFrag" />
+
+        <Button
+            android:id="@+id/frag_positive_btn"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:text="Upgrade"
+            android:textColor="@color/shadowInverseDark"
+            android:background="@drawable/bg_rounded_sweep_gold"
+            android:onClick="onUpgradeClick"/>
+
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

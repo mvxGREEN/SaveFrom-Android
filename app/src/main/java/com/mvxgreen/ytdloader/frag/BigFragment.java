@@ -31,25 +31,13 @@ public class BigFragment extends Fragment {
                 getArguments().getString(getString(R.string.key_extra_menu_item_title), "") : "";
 
         // Check menu item title; inflate proper fragment
-        if (title.equals(getString(R.string.title_menu_pp))) {
-            rootView = inflater.inflate(R.layout.frag_pp, container, false);
-            fillPrivacyPolicy(rootView);
-        } else if (title.equals("Enable Notifications")) {
+        if (title.equals("Enable Notifications")) {
             rootView = inflater.inflate(R.layout.frag_justify_notifications, container, false);
         } else {
-            rootView = inflater.inflate(R.layout.frag_about, container, false);
+            rootView = inflater.inflate(R.layout.frag_upgrade, container, false);
         }
 
         return rootView;
     }
 
-    /**
-     * Fill textview(s) with privacy policy stored in resources
-     * @param rootView fragment layout
-     */
-    public void fillPrivacyPolicy(View rootView) {
-        String[] pp = getResources().getStringArray(R.array.pp_body);
-        TextView body1 = rootView.findViewById(R.id.text_pp_body);
-        body1.setText(pp[0]);
-    }
 }

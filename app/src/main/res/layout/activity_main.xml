@@ -15,6 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="32dp"
         android:theme="@style/AppTheme.AppBarOverlay"
         android:background="@null">
 
@@ -178,8 +179,7 @@
                                 android:layout_marginEnd="@dimen/spacing_med"
                                 android:src="@drawable/ic_folder"
                                 android:background="@null"
-                                android:visibility="gone"
-                                android:onClick="onFolderClick"/>
+                                android:visibility="gone"/>
 
 
                             <!-- FILENAME EDITOR -->

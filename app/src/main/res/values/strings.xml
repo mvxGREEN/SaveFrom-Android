@@ -79,6 +79,8 @@
     <string name="prefs_key_token">TOKEN</string>
     <string name="prefs_key_format_id">FORMAT_ID</string>
     <string name="prefs_key_background_enabled">BACKGROUND_ENABLED</string>
+    <string name="title_menu_upgrade">Upgrade</string>
+    <string name="upgrade_body"><![CDATA[✅  Video includes audio\n\n✅  2160p\n\n✅  1440p\n\n✅  Max framerate\n\n✅  Fastest download speed]]></string>
 
     // privacy policy
     <string-array name="pp_body" translatable="false">
