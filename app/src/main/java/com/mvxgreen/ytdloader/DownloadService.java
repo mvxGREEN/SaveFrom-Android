@@ -140,6 +140,7 @@ public class DownloadService extends Service {
         protected void onPostExecute(String s) {
             Log.i(TAG, "OnPostExecute format_id=" + s);
 
+            /*
             try {
                 // split format ids
                 String fIds = prefsManager.getFormatId();
@@ -149,7 +150,7 @@ public class DownloadService extends Service {
                 String absFilepath = ABS_PATH_DOCS + prefsManager.getFileName();
                 String absFilepathVideo = absFilepath;
                 String absFilepathAudio = absFilepath;
-                absFilepath = absFilepath + "z.mp4";
+                absFilepath += ".mp4";
 
                 // append file extensions
                 File v = new File(absFilepathVideo+".webm");
@@ -185,6 +186,7 @@ public class DownloadService extends Service {
                 Log.e(TAG, "merge failed!");
                 e.printStackTrace();
             }
+             */
 
             // scan new media
             String ext = prefsManager.getFileExt();

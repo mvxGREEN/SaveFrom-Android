@@ -1061,6 +1061,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
             // set position to 2
             p = 2;
+            parent.setSelection(p);
         }
 
         // update var
