@@ -351,7 +351,8 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
                             // update ui to gold
                             MainActivity.this.runOnUiThread(() -> {
-                                MenuItem upgradeItem = (MenuItem)MainActivity.this.findViewById(R.id.action_upgrade);
+                                Toolbar toolbar = MainActivity.this.findViewById(R.id.toolbar);
+                                MenuItem upgradeItem = toolbar.getMenu().findItem(R.id.action_upgrade);
                                 upgradeItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.diamond_24_gold));
                             });
                         }
@@ -383,7 +384,8 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                     // update ui to gold
                     MainActivity.this.runOnUiThread(() -> {
                         Toast.makeText(MainActivity.this, "Thanks and enjoy <3", Toast.LENGTH_LONG).show();
-                        MenuItem upgradeItem = (MenuItem)MainActivity.this.findViewById(R.id.action_upgrade);
+                        Toolbar toolbar = MainActivity.this.findViewById(R.id.toolbar);
+                        MenuItem upgradeItem = toolbar.getMenu().findItem(R.id.action_upgrade);
                         upgradeItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.diamond_24_gold));
                         MainActivity.this.showEmptyLayout();
                     });
