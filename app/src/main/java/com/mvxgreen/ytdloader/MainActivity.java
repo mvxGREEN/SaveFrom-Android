@@ -159,17 +159,14 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         }
 
         // init billing
-        startBillingConnection();
+        loadBillingClient();
     }
 
     @Override
     protected void onResume() {
-        if (billingClient != null && billingClient.isReady()) {
+        if (billingClient != null) {
             // check purchases
             checkSubscriptionStatus();
-        } else {
-            // start billing client connection
-            startBillingConnection();
         }
 
         super.onResume();
@@ -194,10 +191,91 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
     public void launchBillingFlow() {
         Log.i(TAG, "launchBillingFlow");
-        BillingResult billingResult = billingClient.launchBillingFlow(MainActivity.this, MBillingFlowParams);
+        if (MBillingFlowParams != null) {
+            BillingResult billingResult = billingClient.launchBillingFlow(MainActivity.this, MBillingFlowParams);
+        } else {
+            Log.e(TAG, "MBillingFlowParams is null");
+        }
+
     }
 
-    public void startBillingConnection() {
+    class MBillingClientListener implements BillingClientStateListener {
+
+        MBillingClientListener() {}
+
+        @Override
+        public void onBillingServiceDisconnected() {
+            MainActivity.this.establishBillingConnection();
+        }
+
+        @Override
+        public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
+            Log.i(TAG, "onBillingSetupFinished");
+            if (billingResult.getResponseCode() ==  BillingClient.BillingResponseCode.OK) {
+                Log.i(TAG, "Billing Response Code == OK");
+                // query available products
+                QueryProductDetailsParams queryProductDetailsParams =
+                        QueryProductDetailsParams.newBuilder()
+                                .setProductList(
+                                        ImmutableList.of(
+                                                QueryProductDetailsParams.Product.newBuilder()
+                                                        .setProductId("savefrom_gold")
+                                                        .setProductType(BillingClient.ProductType.SUBS)
+                                                        .build()))
+                                .build();
+
+                billingClient.queryProductDetailsAsync(
+                        queryProductDetailsParams,
+                        new ProductDetailsResponseListener() {
+                            public void onProductDetailsResponse(@NonNull BillingResult billingResult,
+                                                                 @NonNull QueryProductDetailsResult queryProductDetailsResult) {
+                                Log.i(TAG, "onProductDetailsResponse");
+                                if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+                                    Log.i(TAG, "Billing Response Code == OK");
+                                    if (queryProductDetailsResult.getProductDetailsList().size() == 0) {
+                                        Log.e(TAG, "no products found");
+                                    }
+                                    for (ProductDetails productDetails : queryProductDetailsResult.getProductDetailsList()) {
+                                        Log.i(TAG, "found product details");
+
+                                        // get product details
+                                        ImmutableList<BillingFlowParams.ProductDetailsParams> productDetailsParamsList =
+                                                ImmutableList.of(
+                                                        BillingFlowParams.ProductDetailsParams.newBuilder()
+                                                                // retrieve a value for "productDetails" by calling queryProductDetailsAsync()
+                                                                .setProductDetails(productDetails)
+                                                                // Get the offer token:
+                                                                // a. For one-time products, call ProductDetails.getOneTimePurchaseOfferDetailsList()
+                                                                // for a list of offers that are available to the user.
+                                                                // b. For subscriptions, call ProductDetails.subscriptionOfferDetails()
+                                                                // for a list of offers that are available to the user.
+                                                                .setOfferToken(productDetails.getSubscriptionOfferDetails().get(0).getOfferToken())
+                                                                .build()
+                                                );
+
+                                        // set billing flow params
+                                        MBillingFlowParams = BillingFlowParams.newBuilder()
+                                                .setProductDetailsParamsList(productDetailsParamsList)
+                                                .build();
+                                    }
+
+                                    for (UnfetchedProduct unfetchedProduct : queryProductDetailsResult.getUnfetchedProductList()) {
+                                        // Handle any unfetched products as appropriate.
+                                    }
+                                } else {
+                                    Log.w(TAG, "Billing Response Code != OK");
+                                }
+                            }
+                        }
+                );
+
+                // check purchases
+                checkSubscriptionStatus();
+            }
+        }
+    }
+
+    public void loadBillingClient() {
         Log.i(TAG, "startBillingConnection");
 
         // init billing client
@@ -208,72 +286,12 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                 .build();
 
         // connect to billing service
-        billingClient.startConnection(new BillingClientStateListener() {
-            @Override
-            public void onBillingSetupFinished(BillingResult billingResult) {
-                if (billingResult.getResponseCode() ==  BillingClient.BillingResponseCode.OK) {
-                    // query available products
-                    QueryProductDetailsParams queryProductDetailsParams =
-                            QueryProductDetailsParams.newBuilder()
-                                    .setProductList(
-                                            ImmutableList.of(
-                                                    QueryProductDetailsParams.Product.newBuilder()
-                                                            .setProductId("savefrom_gold")
-                                                            .setProductType(BillingClient.ProductType.SUBS)
-                                                            .build()))
-                                    .build();
+        billingClient.startConnection(new MBillingClientListener());
+    }
 
-                    billingClient.queryProductDetailsAsync(
-                            queryProductDetailsParams,
-                            new ProductDetailsResponseListener() {
-                                public void onProductDetailsResponse(@NonNull BillingResult billingResult,
-                                                                     @NonNull QueryProductDetailsResult queryProductDetailsResult) {
-                                    Log.i(TAG, "onProductDetailsResponse");
-                                    if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
-                                        Log.i(TAG, "Billing Response Code == OK");
-                                        for (ProductDetails productDetails : queryProductDetailsResult.getProductDetailsList()) {
-                                            Log.i(TAG, "found product details");
-
-                                            // get product details
-                                            ImmutableList<BillingFlowParams.ProductDetailsParams> productDetailsParamsList =
-                                                    ImmutableList.of(
-                                                            BillingFlowParams.ProductDetailsParams.newBuilder()
-                                                                    // retrieve a value for "productDetails" by calling queryProductDetailsAsync()
-                                                                    .setProductDetails(productDetails)
-                                                                    // Get the offer token:
-                                                                    // a. For one-time products, call ProductDetails.getOneTimePurchaseOfferDetailsList()
-                                                                    // for a list of offers that are available to the user.
-                                                                    // b. For subscriptions, call ProductDetails.subscriptionOfferDetails()
-                                                                    // for a list of offers that are available to the user.
-                                                                    .setOfferToken(productDetails.getSubscriptionOfferDetails().toString())
-                                                                    .build()
-                                                    );
-
-                                            // set billing flow params
-                                            MBillingFlowParams = BillingFlowParams.newBuilder()
-                                                    .setProductDetailsParamsList(productDetailsParamsList)
-                                                    .build();
-                                        }
-
-                                        for (UnfetchedProduct unfetchedProduct : queryProductDetailsResult.getUnfetchedProductList()) {
-                                            // Handle any unfetched products as appropriate.
-                                        }
-                                    } else {
-                                        Log.w(TAG, "Billing Response Code != OK");
-                                    }
-                                }
-                            }
-                    );
-
-                    // check purchases
-                    checkSubscriptionStatus();
-                }
-            }
-            @Override
-            public void onBillingServiceDisconnected() {
-                // TODO restart connection
-            }
-        });
+    public void establishBillingConnection() {
+        // connect to billing service
+        billingClient.startConnection(new MBillingClientListener());
     }
 
     @Override
