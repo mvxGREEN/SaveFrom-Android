@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
     public static boolean MIsGold = false;
     private BillingClient billingClient;
 
-    private BillingFlowParams MBillingFlowParams;
+    public static BillingFlowParams MBillingFlowParams;
 
     public MainActivity() {
         activityCurrent = this;
@@ -194,11 +194,15 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
     public void startBillingConnection() {
         Log.i(TAG, "startBillingConnection");
+
+        // init billing client
         billingClient = BillingClient.newBuilder(MainActivity.this)
                 .setListener(purchasesUpdatedListener)
                 .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().enablePrepaidPlans().build())
                 .enableAutoServiceReconnection()
                 .build();
+
+        // connect to billing service
         billingClient.startConnection(new BillingClientStateListener() {
             @Override
             public void onBillingSetupFinished(BillingResult billingResult) {
@@ -219,8 +223,13 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                             new ProductDetailsResponseListener() {
                                 public void onProductDetailsResponse(@NonNull BillingResult billingResult,
                                                                      @NonNull QueryProductDetailsResult queryProductDetailsResult) {
+                                    Log.i(TAG, "onProductDetailsResponse");
                                     if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+                                        Log.i(TAG, "Billing Response Code == OK");
                                         for (ProductDetails productDetails : queryProductDetailsResult.getProductDetailsList()) {
+                                            Log.i(TAG, "found product details");
+
+                                            // get product details
                                             ImmutableList<BillingFlowParams.ProductDetailsParams> productDetailsParamsList =
                                                     ImmutableList.of(
                                                             BillingFlowParams.ProductDetailsParams.newBuilder()
@@ -235,6 +244,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                                                                     .build()
                                                     );
 
+                                            // set billing flow params
                                             MBillingFlowParams = BillingFlowParams.newBuilder()
                                                     .setProductDetailsParamsList(productDetailsParamsList)
                                                     .build();
@@ -243,6 +253,8 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                                         for (UnfetchedProduct unfetchedProduct : queryProductDetailsResult.getUnfetchedProductList()) {
                                             // Handle any unfetched products as appropriate.
                                         }
+                                    } else {
+                                        Log.w(TAG, "Billing Response Code != OK");
                                     }
                                 }
                             }
