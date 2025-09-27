@@ -268,6 +268,20 @@
 
                             </androidx.constraintlayout.widget.ConstraintLayout>
 
+                            <!-- AD BANNER -->
+                            <FrameLayout
+                                android:id="@+id/banner_container"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:visibility="invisible">
+
+                                <com.google.android.gms.ads.AdView
+                                    android:id="@+id/banner_adview"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent" />
+
+                            </FrameLayout>
+
                         </LinearLayout>
 
                     </androidx.constraintlayout.widget.ConstraintLayout>

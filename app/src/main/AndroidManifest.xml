@@ -60,5 +60,12 @@
             android:permission="android.permission.FOREGROUND_SERVICE"
             android:exported="true"
             android:foregroundServiceType="dataSync"/>
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-7417392682402637~7195625397"/>
+        <property
+            android:name="android.adservices.AD_SERVICES_CONFIG"
+            android:resource="@xml/gma_ad_services_config"
+            tools:replace="android:resource" />
     </application>
 </manifest>
