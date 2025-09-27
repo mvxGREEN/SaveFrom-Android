@@ -14,7 +14,7 @@ def dl_video_with_audio(activity, video_url, out, filename, resolution):
     # 'format': "bestvideo[height<=" + resolution + "], bestaudio",
 
     ydl_opts = {
-        'format': "bestvideo[height<=" + resolution + "]",
+        'format': "bestvideo[ext=mp4]",
         'outtmpl': out + filename + '.%(ext)s',
         'restrictfilenames': True,
         "cachedir": False,
@@ -25,6 +25,29 @@ def dl_video_with_audio(activity, video_url, out, filename, resolution):
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(video_url, download=True)
         return info_dict['format_id']
+
+
+def dl_audio(activity, video_url, out, filename, resolution):
+    # 'outtmpl': out + '%(title).25s.%(ext)s',
+    progress_hook = create_progress_hook(activity)
+
+    # example formats
+    # 'format': "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+    # 'format': "bestvideo[height<=" + resolution + "], bestaudio",
+
+    ydl_opts = {
+        'format': "bestaudio[ext=m4a]",
+        'outtmpl': out + filename + '_a.%(ext)s',
+        'restrictfilenames': True,
+        "cachedir": False,
+        "ignoreerrors": True,
+        'progress_hooks': [progress_hook]
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(video_url, download=True)
+        return info_dict['format_id']
+
 
 def create_progress_hook(a):
     def progress_hook(d):
@@ -40,7 +63,7 @@ def extract_video_title(video_url, resolution):
     filename_id = f"{random.randint(0,9)}{random.randint(0,9)}{random.randint(0,9)}{random.randint(0,9)}_"
 
     ydl_opts = {
-        'format': "bestvideo[height<=" + resolution + "]",
+        'format': "bestvideo[height<=" + resolution + "][ext=mp4]",
         'restrictfilenames': True,
         "cachedir": False,
         "ignoreerrors": True,
