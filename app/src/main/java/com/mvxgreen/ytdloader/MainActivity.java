@@ -75,6 +75,11 @@ import com.android.billingclient.api.UnfetchedProduct;
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.ump.ConsentForm;
+import com.google.android.ump.ConsentInformation;
+import com.google.android.ump.ConsentRequestParameters;
+import com.google.android.ump.UserMessagingPlatform;
 import com.google.common.collect.ImmutableList;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.mvxgreen.ytdloader.databinding.ActivityMainBinding;
@@ -98,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
     Animation fadeIn, fadeOut;
     FileFragment fileFragment;
 
-    PrefsManager mPrefsManager;
+    PrefsManager prefsManager;
     FinishReceiver mFinishReceiver;
 
     AndroidPlatform androidPlatform;
@@ -107,10 +112,12 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
     static String mResolution = "1080p";
 
+    // admob
+    ConsentInformation consentInformation;
+
     // billing
     public static boolean MIsGold = false;
     private BillingClient billingClient;
-
     public static BillingFlowParams MBillingFlowParams;
 
     public MainActivity() {
@@ -131,8 +138,8 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
 
-        mPrefsManager = new PrefsManager(MainActivity.this);
-        isBackgroundEnabled = !(mPrefsManager.getBackgroundEnabled()).isEmpty();
+        prefsManager = new PrefsManager(MainActivity.this);
+        isBackgroundEnabled = !(prefsManager.getBackgroundEnabled()).isEmpty();
         Log.i(TAG, "isBackgroundEnabled="+isBackgroundEnabled);
         initMainViews();
 
@@ -154,6 +161,9 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
         // init billing
         loadBillingClient();
+
+        // init admob
+        loadAdmob();
     }
 
     @Override
@@ -277,6 +287,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         }
     }
 
+    // TODO move to billing manager
     public void loadBillingClient() {
         Log.i(TAG, "loadBillingClient");
 
@@ -413,6 +424,88 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         });
     }
 
+    // TODO move to ads manager
+    public void loadAdmob() {
+        // init admob
+        /*
+        // Google UMP debug settings
+        // test EU location (GDPR privacy form)
+        ConsentDebugSettings debugSettings = new ConsentDebugSettings.Builder(this)
+                .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
+                .addTestDeviceHashedId("2C119C1870497A18CD6315F6A9D8537E")
+                .build();
+         */
+
+        // create a consent request parameters object
+        ConsentRequestParameters params = new ConsentRequestParameters
+                .Builder()
+                //.setConsentDebugSettings(debugSettings)
+                .build();
+
+        consentInformation = UserMessagingPlatform.getConsentInformation(this);
+        //consentInformation.reset();
+        consentInformation.requestConsentInfoUpdate(
+                this,
+                params,
+                (ConsentInformation.OnConsentInfoUpdateSuccessListener) () -> {
+                    // load and show the consent form.
+                    UserMessagingPlatform.loadAndShowConsentFormIfRequired(
+                            this,
+                            (ConsentForm.OnConsentFormDismissedListener) loadAndShowError -> {
+                                if (loadAndShowError != null) {
+                                    // Consent gathering failed.
+                                    Log.w(TAG, String.format("%s: %s",
+                                            loadAndShowError.getErrorCode(),
+                                            loadAndShowError.getMessage()));
+                                }
+
+                                // consent gathered
+                                if (consentInformation.canRequestAds() &&
+                                        !MIsGold) {
+                                    // initialize admob sdk
+                                    MobileAds.initialize(this, initializationStatus -> {});
+
+                                    // load admob ads
+                                    mBinding.bannerContainer.setVisibility(View.VISIBLE);
+                                    AdsManager.loadAdmobInterstitialAd(MainActivity.this);
+                                    AdsManager.loadBanner(MainActivity.this, mBinding);
+                                }
+
+                                if (isPrivacyOptionsRequired()) {
+                                    // Regenerate the options menu to include privacy settings
+                                    invalidateOptionsMenu();
+                                }
+                            }
+                    );
+                },
+                (ConsentInformation.OnConsentInfoUpdateFailureListener) requestConsentError -> {
+                    // Consent gathering failed.
+                    Log.w(TAG, String.format("%s: %s",
+                            requestConsentError.getErrorCode(),
+                            requestConsentError.getMessage()));
+                });
+
+        // TODO look into using IMA SDK
+        // Check if you can initialize the IMA SDK in parallel
+        // while checking for new consent information. Consent obtained in
+        // the previous session can be used to request ads.
+        if (consentInformation.canRequestAds() &&
+                !MIsGold) {
+            // initialize Google Admob SDK
+            MobileAds.initialize(this, initializationStatus -> {});
+
+            // load admob ads
+            mBinding.bannerContainer.setVisibility(View.VISIBLE);
+            AdsManager.loadAdmobInterstitialAd(MainActivity.this);
+            AdsManager.loadBanner(MainActivity.this, mBinding);
+        }
+    }
+
+    public boolean isPrivacyOptionsRequired() {
+        return consentInformation.getPrivacyOptionsRequirementStatus()
+                == ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED;
+    }
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  PERMISSIONS  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     public static String[] req_permissions_old = {
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -530,7 +623,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
                     // check for internet & valid url
                     if (isInternetAvailable()) {
-                        mPrefsManager.setOriginalUrl(inputText);
+                        prefsManager.setOriginalUrl(inputText);
                         new Thread(() -> {
                             loadVideoInfo(inputText);
                         }).start();
@@ -705,8 +798,8 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
     }
 
     public void showFileFrag() {
-        String fileName = mPrefsManager.getFileName();
-        String fileExt = mPrefsManager.getFileExt();
+        String fileName = prefsManager.getFileName();
+        String fileExt = prefsManager.getFileExt();
         final String absPath = ABS_PATH_DOCS + fileName + "." + fileExt;
 
         // inflate fragment
@@ -782,9 +875,9 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
     private void showPreviewLayout() {
         Log.i(TAG, "showPreviewLayout()");
 
-        String thumbnailUrl = mPrefsManager.getThumbnailUrl();
+        String thumbnailUrl = prefsManager.getThumbnailUrl();
 
-        updateEditFilenameView(mPrefsManager.getFileName());
+        updateEditFilenameView(prefsManager.getFileName());
         mBinding.btnPaste.setVisibility(View.GONE);
         mBinding.imgPreview.setAlpha(1.0f);
         mBinding.imgPreview.setVisibility(View.VISIBLE);
@@ -890,9 +983,9 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
     public void updateFilenamePref() {
         String input = mBinding.filenameEdittext.getText().toString();
         if (input.isEmpty()) {
-            mPrefsManager.setFileName("VIDEO_LOADER_DOWNLOAD");
+            prefsManager.setFileName("VIDEO_LOADER_DOWNLOAD");
         } else {
-            mPrefsManager.setFileName(input);
+            prefsManager.setFileName(input);
         }
 
     }
@@ -947,9 +1040,9 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                 + "ext: " + extStr + "\n"
                 + "thumbnail url: " + thumbStr);
 
-        mPrefsManager.setFileName(titleStr);
-        mPrefsManager.setThumbnailUrl(thumbStr);
-        mPrefsManager.setFileExt(extStr);
+        prefsManager.setFileName(titleStr);
+        prefsManager.setThumbnailUrl(thumbStr);
+        prefsManager.setFileExt(extStr);
 
         runOnUiThread(this::showPreviewLayout);
     }
@@ -1009,7 +1102,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
     public void onEnableBackgroundClicked(View v) {
         mBinding.permissionHolder.setVisibility(View.GONE);
-        mPrefsManager.setBackgroundEnabled("TRUE");
+        prefsManager.setBackgroundEnabled("TRUE");
 
         Intent intent = new Intent(android.provider.Settings.ACTION_SETTINGS);
         intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
@@ -1145,8 +1238,8 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                     absFilePath, MIME_MP4).scanMedia();
 
             // count runs
-            mPrefsManager.incrementTotalRuns();
-            int runs = mPrefsManager.getTotalRuns();
+            prefsManager.incrementTotalRuns();
+            int runs = prefsManager.getTotalRuns();
 
             // show rate dialog ?
             if (runs%3==1) {

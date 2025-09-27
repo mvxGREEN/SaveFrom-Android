@@ -45,6 +45,15 @@ public class PrefsManager {
             SharedPreferences.Editor editor = sharedPrefs.edit();
 
             // total runs
+            if (!sharedPrefs.contains("IS_GOLD")) {
+                editor.putBoolean(
+                        "IS_GOLD",
+                        false
+                );
+            }
+            editor.apply();
+
+            // total runs
             if (!sharedPrefs.contains("TOTAL_RUNS")) {
                 editor.putInt(
                         "TOTAL_RUNS",
@@ -273,6 +282,22 @@ public class PrefsManager {
 
         SharedPreferences.Editor editor = sharedPrefs.edit();
         editor.putString(
+                key,
+                value
+        );
+        editor.apply();
+    }
+
+    public boolean getIsGold() {
+        return sharedPrefs.getBoolean("IS_GOLD", false);
+    }
+    public void setIsGold(boolean value) {
+        String key = "IS_GOLD";
+
+        Log.i(TAG, "set " + key + " in shared prefs: {" + key + "," + value + "}");
+
+        SharedPreferences.Editor editor = sharedPrefs.edit();
+        editor.putBoolean(
                 key,
                 value
         );
