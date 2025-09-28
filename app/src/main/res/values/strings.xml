@@ -80,7 +80,7 @@
     <string name="prefs_key_format_id">FORMAT_ID</string>
     <string name="prefs_key_background_enabled">BACKGROUND_ENABLED</string>
     <string name="title_menu_upgrade">Upgrade</string>
-    <string name="upgrade_body"><![CDATA[✅ \t4K Resolution\n\n✅ \tAudio\n\n✅ \tFastest Speed\n\n✅ \tNo More Ads!]]></string>
+    <string name="upgrade_body"><![CDATA[✅ \t4K Resolution\n\n✅ \tFastest Speed\n\n✅ \tNo More Ads!]]></string>
     <string name="inflyer_body"><![CDATA[Try our other app, InFlyer,\nto download links like these.\n\n✦ Ad by Green Mobile ✦]]></string>
     <string name="get_it">Get It!</string>
     <string name="nah">Nah</string>

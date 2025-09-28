@@ -96,95 +96,50 @@ public class DownloadService extends Service {
                     .logEvent("download_start", bundle);
         } catch (Exception ignored) {}
 
-        new DownloadAudioTask(MainActivity.activityCurrent).execute(url);
-    }
-
-    // async download audio
-    public static class DownloadAudioTask extends AsyncTask<String, Void, String> {
-        private static final String TAG = DownloadAudioTask.class.getCanonicalName();
-        String videoUrl;
-        DownloadVideoTask dvt;
-        PrefsManager prefsManager;
-
-        public DownloadAudioTask(Context ctx) {
-            this.dvt = new DownloadVideoTask((MainActivity)ctx);
-            prefsManager = new PrefsManager(ctx);
-            Python.start(new AndroidPlatform(ctx));
-        }
-
-        //this method will download the audio file by using python script
-        @Override
-        protected String doInBackground(String... urls) {
-            Log.i(TAG, "doInBackground()");
-            this.videoUrl = urls[0];
-            String resolution = mResolution.replaceAll("\\D", "");
-
-            Python py = Python.getInstance();
-            PyObject pyObject = py.getModule("vidloader");
-
-            // get video file extension
-            //PyObject resExt = pyObject.callAttr("extract_video_ext", videoUrl, resolution);
-            //vidExt = "." + resExt.toString();
-
-            String res = "";
-            try {
-                Log.i(TAG, "trying dl_audio");
-
-                PyObject result = pyObject.callAttr("dl_audio",
-                        MainActivity.activityCurrent,
-                        this.videoUrl,
-                        ABS_PATH_DOCS,
-                        prefsManager.getFileName());
-                res = result.toString();
-
-                Log.i(TAG, "format_ids: "+ res);
-                prefsManager.setFormatId(res);
-            } catch (Exception e) {
-                e.printStackTrace();
-                String msg = "error downloading audio: e="+e;
-                Log.e(TAG, msg);
-            }
-
-            return res;
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            Log.i(TAG, "OnPostExecute");
-
-            // start dl_video
-            dvt.execute(this.videoUrl);
-        }
+        new DownloadVideoTask(MainActivity.activityCurrent).execute(url);
     }
 
     // async download video
     public static class DownloadVideoTask extends AsyncTask<String, Void, String> {
         private static final String TAG = DownloadVideoTask.class.getCanonicalName();
         String vidExt = ".mp4", audExt = ".m4a";
+        AndroidPlatform ap;
         PrefsManager prefsManager;
 
         public DownloadVideoTask(Context ctx) {
             prefsManager = new PrefsManager(ctx);
+            ap = new AndroidPlatform(ctx);
         }
 
         //this method will download the audio file by using python script
         @Override
         protected String doInBackground(String... urls) {
             Log.i(TAG, "doInBackground()");
-            String videoUrl = urls[0];
-            String resolution = mResolution.replaceAll("\\D", "");
 
+            // init python
+            if (!Python.isStarted()) {
+                Python.start(ap);
+            }
             Python py = Python.getInstance();
             PyObject pyObject = py.getModule("vidloader");
 
-            // get video file extension
-            //PyObject resExt = pyObject.callAttr("extract_video_ext", videoUrl, resolution);
-            //vidExt = "." + resExt.toString();
+            // get video url and resolution
+            String videoUrl = urls[0];
+            String resolution = mResolution.replaceAll("\\D", "");
+
+            if (!Python.isStarted()) {
+                Python.start(ap);
+            }
 
             String res = "";
             try {
-                Log.i(TAG, "trying dl_video");
-                PyObject result = pyObject.callAttr("dl_video_with_audio",
+                Log.i(TAG, "trying dl_video_without_audio");
+
+                if (!Python.isStarted()) {
+                    Python.start(ap);
+                }
+
+                PyObject result = pyObject.callAttr("dl_video_without_audio",
                         MainActivity.activityCurrent,
                         videoUrl,
                         ABS_PATH_DOCS,
@@ -214,27 +169,9 @@ public class DownloadService extends Service {
             // build filepaths
             String absFilename = prefsManager.getFileName() + vidExt;
             String absFilepath = ABS_PATH_DOCS + prefsManager.getFileName();
-            String absFilepathVideo = absFilepath + "_v" + vidExt;
-            String absFilepathAudio = absFilepath + "_a" + audExt;
             absFilepath += vidExt;
 
-            Log.i(TAG, "absFilePathVideo=" + absFilepathVideo
-                    + ", absFilePathAudio=" + absFilepathAudio);
-            try {
-                Bundle bundle = new Bundle();
-                bundle.putString("app_name", "savefrom");
-                bundle.putString("filename", absFilename);
-                FirebaseAnalytics.getInstance(MainActivity.activityCurrent)
-                        .logEvent("download_finish", bundle);
-            } catch (Exception ignored) {}
-
-            // TODO merge video and audio
-            ConcatRunner.mergeAV(absFilepath, absFilepathVideo, absFilepathAudio);
-
-            // TODO delete temp AV files
-            ConcatRunner.deleteTempFiles(absFilepathVideo, absFilepathAudio);
-
-            // scan new media
+            // scan video file (no audio)
             File dl = new File(absFilepath);
             if (dl.exists()) {
                 FileTime now = null;

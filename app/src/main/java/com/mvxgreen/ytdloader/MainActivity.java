@@ -632,16 +632,17 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                         return;
                     }
 
+                    // if 'https://' duplicated, trim to second instance
+                    if (input.lastIndexOf("https://") != input.indexOf("https://")) {
+                        input = input.substring(input.lastIndexOf("https://"));
+                    }
                     final String inputText = input;
-                    if (!input.contains("https://")) {
-                        input = "https://" + input;
-                    }
-                    String domain = input.substring(input.indexOf("https://")+8);
-                    if (input.contains("/")) {
-                        domain = input.substring(0, input.indexOf("/"));
-                    }
 
-                    // log valid input
+                    // log valid input & domain
+                    String domain = input.substring(input.indexOf("https://")+8);
+                    if (domain.contains("/")) {
+                        domain = domain.substring(0, domain.indexOf("/"));
+                    }
                     try {
                         Bundle bundle = new Bundle();
                         bundle.putString("app_name", "savefrom");
@@ -651,12 +652,16 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                                 .logEvent("valid_input", bundle);
                     } catch (Exception ignored) {}
 
+                    // update ui
                     killKeyboard();
                     showLoadingLayout();
 
-                    // check for internet & valid url
+                    // check for internet
                     if (isInternetAvailable()) {
+                        // save input url
                         prefsManager.setOriginalUrl(inputText);
+
+                        // start loading preview
                         new Thread(() -> {
                             loadVideoInfo(inputText);
                         }).start();
@@ -1265,7 +1270,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
             // show error UI if missing filepath
             if (absFilePath == null || absFilePath.isEmpty()) {
                 runOnUiThread(() -> {
-                    Toast.makeText(MainActivity.this, "unknown error", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "unknown error, please try again", Toast.LENGTH_LONG).show();
                     showEmptyLayout();
                 });
                 return;

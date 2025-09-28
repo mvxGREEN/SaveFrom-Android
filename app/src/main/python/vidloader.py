@@ -5,39 +5,14 @@ import random
 from com.chaquo.python import Python
 from com.mvxgreen.ytdloader import MainActivity
 
-def dl_video_with_audio(activity, video_url, out, filename, resolution):
-    # 'outtmpl': out + '%(title).25s.%(ext)s',
+def dl_video_without_audio(activity, video_url, out, filename, resolution):
     progress_hook = create_progress_hook(activity)
 
-    # example formats
     # 'format': "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
-    # 'format': "bestvideo[height<=" + resolution + "], bestaudio",
-
-    ydl_opts = {
-        'format': "bestvideo[height<=" + resolution + "][ext=mp4]",
-        'outtmpl': out + filename + '_v.%(ext)s',
-        'restrictfilenames': True,
-        "cachedir": False,
-        "ignoreerrors": True,
-        'progress_hooks': [progress_hook]
-    }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info_dict = ydl.extract_info(video_url, download=True)
-        return info_dict['format_id']
-
-
-def dl_audio(activity, video_url, out, filename):
     # 'outtmpl': out + '%(title).25s.%(ext)s',
-    progress_hook = create_progress_hook(activity)
-
-    # example formats
-    # 'format': "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
-    # 'format': "bestvideo[height<=" + resolution + "], bestaudio",
-
     ydl_opts = {
-        'format': "bestaudio[ext=m4a]",
-        'outtmpl': out + filename + '_a.%(ext)s',
+        'format': "bestvideo[height<=" + resolution + "][ext=mp4]/bestvideo[height<=" + resolution + "]/best[height<=" + resolution + "]",
+        'outtmpl': out + filename + '.%(ext)s',
         'restrictfilenames': True,
         "cachedir": False,
         "ignoreerrors": True,
