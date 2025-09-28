@@ -1265,7 +1265,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
             // show error UI if missing filepath
             if (absFilePath == null || absFilePath.isEmpty()) {
                 runOnUiThread(() -> {
-                    Toast.makeText(MainActivity.this, "unknown error", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "unknown error, please try again", Toast.LENGTH_LONG).show();
                     showEmptyLayout();
                 });
                 return;

@@ -104,12 +104,13 @@ public class DownloadService extends Service {
         private static final String TAG = DownloadAudioTask.class.getCanonicalName();
         String videoUrl;
         DownloadVideoTask dvt;
+        AndroidPlatform ap;
         PrefsManager prefsManager;
 
         public DownloadAudioTask(Context ctx) {
             this.dvt = new DownloadVideoTask((MainActivity)ctx);
             prefsManager = new PrefsManager(ctx);
-            Python.start(new AndroidPlatform(ctx));
+            ap = new AndroidPlatform(ctx);
         }
 
         //this method will download the audio file by using python script
@@ -118,6 +119,10 @@ public class DownloadService extends Service {
             Log.i(TAG, "doInBackground()");
             this.videoUrl = urls[0];
             String resolution = mResolution.replaceAll("\\D", "");
+
+            if (!Python.isStarted()) {
+                Python.start(ap);
+            }
 
             Python py = Python.getInstance();
             PyObject pyObject = py.getModule("vidloader");
@@ -161,10 +166,14 @@ public class DownloadService extends Service {
     public static class DownloadVideoTask extends AsyncTask<String, Void, String> {
         private static final String TAG = DownloadVideoTask.class.getCanonicalName();
         String vidExt = ".mp4", audExt = ".m4a";
+        MergeAVTask mavt;
+        AndroidPlatform ap;
         PrefsManager prefsManager;
 
         public DownloadVideoTask(Context ctx) {
             prefsManager = new PrefsManager(ctx);
+            ap = new AndroidPlatform(ctx);
+            mavt = new MergeAVTask((MainActivity)ctx);
         }
 
         //this method will download the audio file by using python script
@@ -181,9 +190,18 @@ public class DownloadService extends Service {
             //PyObject resExt = pyObject.callAttr("extract_video_ext", videoUrl, resolution);
             //vidExt = "." + resExt.toString();
 
+            if (!Python.isStarted()) {
+                Python.start(ap);
+            }
+
             String res = "";
             try {
                 Log.i(TAG, "trying dl_video");
+
+                if (!Python.isStarted()) {
+                    Python.start(ap);
+                }
+
                 PyObject result = pyObject.callAttr("dl_video_with_audio",
                         MainActivity.activityCurrent,
                         videoUrl,
@@ -218,6 +236,8 @@ public class DownloadService extends Service {
             String absFilepathAudio = absFilepath + "_a" + audExt;
             absFilepath += vidExt;
 
+            mavt.setFilepaths(absFilepath, absFilepathVideo, absFilepathAudio);
+
             Log.i(TAG, "absFilePathVideo=" + absFilepathVideo
                     + ", absFilePathAudio=" + absFilepathAudio);
             try {
@@ -228,14 +248,65 @@ public class DownloadService extends Service {
                         .logEvent("download_finish", bundle);
             } catch (Exception ignored) {}
 
-            // TODO merge video and audio
+            // scan video file (no audio)
+            File dl = new File(absFilepathVideo);
+            if (dl.exists()) {
+                FileTime now = null;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    now = FileTime.fromMillis(System.currentTimeMillis());
+                    try {
+                        Files.setLastModifiedTime(dl.toPath(), now);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+
+            // start merge task
+            mavt.execute(absFilepathVideo);
+        }
+    }
+
+    // async download audio
+    public static class MergeAVTask extends AsyncTask<String, Void, String> {
+        private static final String TAG = MergeAVTask.class.getCanonicalName();
+        AndroidPlatform ap;
+        PrefsManager prefsManager;
+        String absFilepath, absFilepathVideo, absFilepathAudio;
+
+        public MergeAVTask(Context ctx) {
+            prefsManager = new PrefsManager(ctx);
+            ap = new AndroidPlatform(ctx);
+        }
+
+        public void setFilepaths(String fp, String fpv, String fpa) {
+            this.absFilepath = fp;
+            this.absFilepathVideo = fpv;
+            this.absFilepathAudio = fpa;
+        }
+
+        //this method will download the audio file by using python script
+        @Override
+        protected String doInBackground(String... urls) {
+            Log.i(TAG, "doInBackground()");
+
+            String res = "done";
+
+            // merge video and audio
             ConcatRunner.mergeAV(absFilepath, absFilepathVideo, absFilepathAudio);
 
-            // TODO delete temp AV files
+            // delete temp AV files
             ConcatRunner.deleteTempFiles(absFilepathVideo, absFilepathAudio);
 
-            // scan new media
-            File dl = new File(absFilepath);
+            return res;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            Log.i(TAG, "OnPostExecute");
+
+            // scan merged AV file
+            File dl = new File(absFilepathVideo);
             if (dl.exists()) {
                 FileTime now = null;
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

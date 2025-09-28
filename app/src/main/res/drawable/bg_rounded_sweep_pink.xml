@@ -5,7 +5,7 @@
             <gradient android:type="sweep"
                 android:centerY="0.0"
                 android:centerX="0.0"
-                android:startColor="@color/shadowPink"
+                android:startColor="@color/mvxPink"
                 android:centerColor="@color/shadowPinkDark"
                 android:endColor="@color/shadowPinkDarker" />
             <corners android:radius="@dimen/corner_radius_primary"/>
