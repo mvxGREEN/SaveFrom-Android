@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
     boolean isBackgroundEnabled = false;
 
-    static String mResolution = "1080p";
+    static String mResolution = "2160p";
 
     // admob
     ConsentInformation consentInformation;
@@ -651,7 +651,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
         // set default resolution
         SharedPreferences sharedPref = getSharedPreferences("SaveFromPrefs", Context.MODE_PRIVATE);
-        int selectionIndex = sharedPref.getInt("RES_POSITION", 2);
+        int selectionIndex = sharedPref.getInt("RES_POSITION", 0);
         spinner.setSelection(selectionIndex);
 
         // spinner item selected listener
@@ -1186,8 +1186,9 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         SharedPreferences sharedPref = getSharedPreferences("SaveFromPrefs", Context.MODE_PRIVATE);
         MIsGold = sharedPref.getBoolean("IS_GOLD", false);
 
-        // check if resolution restricted
         int p = position;
+
+        /* check if resolution restricted
         if (position == 0 || position == 1) {
             Log.i(TAG, "gold resolution selected");
             if (MIsGold) {
@@ -1202,6 +1203,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                 parent.setSelection(p);
             }
         }
+        */
 
         // update var
         mResolution = spinnerItem;

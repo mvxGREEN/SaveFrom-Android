@@ -14,7 +14,7 @@ def dl_video_with_audio(activity, video_url, out, filename, resolution):
     # 'format': "bestvideo[height<=" + resolution + "], bestaudio",
 
     ydl_opts = {
-        'format': "bestvideo[ext=mp4]",
+        'format': "bestvideo[height<=" + resolution + "][ext=mp4]",
         'outtmpl': out + filename + '.%(ext)s',
         'restrictfilenames': True,
         "cachedir": False,
