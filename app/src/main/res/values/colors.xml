@@ -27,6 +27,11 @@
     <color name="shadowInverseDark">#C4ffffff</color>
     <color name="shadowInverseDarker">#A9ffffff</color>
 
+    <color name="shadowPinkLight">#69FF9999</color>
+    <color name="shadowPink">#83FF9999</color>
+    <color name="shadowPinkDark">#A9FF9999</color>
+    <color name="shadowPinkDarker">#C6FF9999</color>
+
     <color name="shadowGoldLight">#69D4AF37</color>
     <color name="shadowGold">#83D4AF37</color>
     <color name="shadowGoldDark">#A9D4AF37</color>

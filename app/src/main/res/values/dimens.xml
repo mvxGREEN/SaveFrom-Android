@@ -42,7 +42,7 @@
     <dimen name="corner_radius_secondary">4dp</dimen>
 
     // Text Size
-    <dimen name="text_size_frag_body">16sp</dimen>
+    <dimen name="text_size_frag_body">18sp</dimen>
     <dimen name="text_size_frag_body_small">14sp</dimen>
     <dimen name="text_size_edittext">24sp</dimen>
 

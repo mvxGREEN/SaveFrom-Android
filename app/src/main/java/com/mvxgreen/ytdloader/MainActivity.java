@@ -1,5 +1,6 @@
 package com.mvxgreen.ytdloader;
 
+import static android.view.View.GONE;
 import static com.mvxgreen.ytdloader.manager.MediaManager.MIME_MP4;
 
 import android.Manifest;
@@ -187,12 +188,19 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         super.onDestroy();
     }
 
+    public void onYearlyClick(View v) {
+        Log.i(TAG, "onYearlyClick");
+        //launchBillingFlow("yearly");
+        launchBillingFlow();
+    }
+
     public void onUpgradeClick(View v) {
         onUpgradeClick();
     }
 
     public void onUpgradeClick() {
         Log.i(TAG, "onUpgradeClick");
+        //launchBillingFlow("monthly");
         launchBillingFlow();
     }
 
@@ -339,6 +347,13 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
             editor.apply();
 
             MIsGold = false;
+
+            // update toolbar icon
+            MainActivity.this.runOnUiThread(() -> {
+                Toolbar toolbar = MainActivity.this.findViewById(R.id.toolbar);
+                MenuItem upgradeItem = toolbar.getMenu().findItem(R.id.action_upgrade);
+                upgradeItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.diamond_24));
+            });
         }
     }
 
@@ -362,6 +377,13 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
                         MIsGold = false;
 
+                        // update ui to gold
+                        MainActivity.this.runOnUiThread(() -> {
+                            Toolbar toolbar = MainActivity.this.findViewById(R.id.toolbar);
+                            MenuItem upgradeItem = toolbar.getMenu().findItem(R.id.action_upgrade);
+                            upgradeItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.diamond_24));
+                        });
+
                         return;
                     }
 
@@ -380,9 +402,13 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                             editor.putBoolean("IS_GOLD", true);
                             editor.apply();
 
+                            // set global variable
                             MIsGold = true;
 
-                            // update ui to gold
+                            // hide banner ad
+                            mBinding.bannerContainer.setVisibility(GONE);
+
+                            // update toolbar icon
                             MainActivity.this.runOnUiThread(() -> {
                                 Toolbar toolbar = MainActivity.this.findViewById(R.id.toolbar);
                                 MenuItem upgradeItem = toolbar.getMenu().findItem(R.id.action_upgrade);
@@ -412,11 +438,15 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                     editor.putBoolean("IS_GOLD", true);
                     editor.apply();
 
+                    // set global variable
                     MIsGold = true;
 
-                    // update ui to gold
+                    // hide banner ad
+                    mBinding.bannerContainer.setVisibility(GONE);
+
+                    // update toolbar icon
                     MainActivity.this.runOnUiThread(() -> {
-                        Toast.makeText(MainActivity.this, "Thank you, enjoy <3", Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "Thank you, enjoy! <3", Toast.LENGTH_LONG).show();
                         Toolbar toolbar = MainActivity.this.findViewById(R.id.toolbar);
                         MenuItem upgradeItem = toolbar.getMenu().findItem(R.id.action_upgrade);
                         upgradeItem.setIcon(ContextCompat.getDrawable(MainActivity.this, R.drawable.diamond_24_gold));
@@ -797,7 +827,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
     public void closeBigFrag() {
         ConstraintLayout fragHolder = findViewById(R.id.big_frag_holder);
-        fragHolder.setVisibility(View.GONE);
+        fragHolder.setVisibility(GONE);
     }
 
     public void showFileFrag() {
@@ -832,7 +862,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
         // hide holder view
         ConstraintLayout fragHolder = findViewById(R.id.file_hint_holder);
-        fragHolder.setVisibility(View.GONE);
+        fragHolder.setVisibility(GONE);
     }
 
     private void showEmptyLayout() {
@@ -841,12 +871,12 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         closeBigFrag();
         closeFileFrag();
 
-        mBinding.imgPreview.setVisibility(View.GONE);
-        mBinding.glowingLoader.setVisibility(View.GONE);
+        mBinding.imgPreview.setVisibility(GONE);
+        mBinding.glowingLoader.setVisibility(GONE);
         mBinding.mainSearchBar.setText("");
-        mBinding.btnDownload.setVisibility(View.GONE);
+        mBinding.btnDownload.setVisibility(GONE);
         mBinding.btnDownload.setEnabled(false);
-        mBinding.numProgress.setVisibility(View.GONE);
+        mBinding.numProgress.setVisibility(GONE);
         mBinding.ivCircle.setVisibility(View.VISIBLE);
         mBinding.btnPaste.setVisibility(View.VISIBLE);
         mBinding.filenameEdittext.setEnabled(false);
@@ -866,13 +896,13 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
 
         closeFileFrag();
         mBinding.imgPreview.setVisibility(View.INVISIBLE);
-        mBinding.btnDownload.setVisibility(View.GONE);
+        mBinding.btnDownload.setVisibility(GONE);
         mBinding.btnDownload.setEnabled(false);
-        mBinding.numProgress.setVisibility(View.GONE);
+        mBinding.numProgress.setVisibility(GONE);
         mBinding.glowingLoader.startAnimation(fadeIn);
         mBinding.glowingLoader.setVisibility(View.VISIBLE);
         mBinding.ivCircle.setVisibility(View.INVISIBLE);
-        mBinding.btnPaste.setVisibility(View.GONE);
+        mBinding.btnPaste.setVisibility(GONE);
 
         // show interstitial ad
         runOnUiThread(() -> {
@@ -888,7 +918,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         String thumbnailUrl = prefsManager.getThumbnailUrl();
 
         updateEditFilenameView(prefsManager.getFileName());
-        mBinding.btnPaste.setVisibility(View.GONE);
+        mBinding.btnPaste.setVisibility(GONE);
         mBinding.imgPreview.setAlpha(1.0f);
         mBinding.imgPreview.setVisibility(View.VISIBLE);
         Picasso.Builder builder = new Picasso.Builder(MainActivity.this);
@@ -913,8 +943,8 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         public void onSuccess() {
             Log.i(TAG, "onSuccess() decorating preview...");
             mBinding.glowingLoader.startAnimation(fadeOut);
-            mBinding.glowingLoader.setVisibility(View.GONE);
-            mBinding.numProgress.setVisibility(View.GONE);
+            mBinding.glowingLoader.setVisibility(GONE);
+            mBinding.numProgress.setVisibility(GONE);
             // draw circle
             mBinding.ivCircle.setVisibility(View.VISIBLE);
             ((Animatable)mBinding.ivCircle.getDrawable()).start();
@@ -931,10 +961,10 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         public void onError(Exception e) {
             Log.e("onPicassoFinished", ".onError()");
             e.printStackTrace();
-            mBinding.btnPaste.setVisibility(View.GONE);
+            mBinding.btnPaste.setVisibility(GONE);
             mBinding.glowingLoader.startAnimation(fadeOut);
-            mBinding.glowingLoader.setVisibility(View.GONE);
-            mBinding.imgPreview.setVisibility(View.GONE);
+            mBinding.glowingLoader.setVisibility(GONE);
+            mBinding.imgPreview.setVisibility(GONE);
             // draw circle
             mBinding.ivCircle.setVisibility(View.VISIBLE);
             ((Animatable)mBinding.ivCircle.getDrawable()).start();
@@ -958,8 +988,8 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         mBinding.btnDownload.setEnabled(false);
         mBinding.ivCircle.startAnimation(fadeOut);
         mBinding.btnDownload.startAnimation(fadeOut);
-        mBinding.ivCircle.setVisibility(View.GONE);
-        mBinding.btnDownload.setVisibility(View.GONE);
+        mBinding.ivCircle.setVisibility(GONE);
+        mBinding.btnDownload.setVisibility(GONE);
         mBinding.imgPreview.setAlpha(0.69f);
         mBinding.numProgress.setVisibility(View.VISIBLE);
         mBinding.numProgress.setProgress(0);
@@ -977,15 +1007,15 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         //mBinding.permissionHolder.setVisibility(View.GONE);
         showFileFrag();
 
-        mBinding.ivCircle.setVisibility(View.GONE);
-        mBinding.glowingLoader.setVisibility(View.GONE);
+        mBinding.ivCircle.setVisibility(GONE);
+        mBinding.glowingLoader.setVisibility(GONE);
         mBinding.imgPreview.setAlpha(1.0f);
-        mBinding.btnDownload.setVisibility(View.GONE);
+        mBinding.btnDownload.setVisibility(GONE);
         mBinding.btnDownload.setEnabled(false);
         mBinding.btnPaste.setVisibility(View.VISIBLE);
         mBinding.btnPaste.setEnabled(true);
         mBinding.ivCircle.setVisibility(View.VISIBLE);
-        mBinding.numProgress.setVisibility(View.GONE);
+        mBinding.numProgress.setVisibility(GONE);
         mBinding.numProgress.setProgress(0);
         mBinding.mainScroll.smoothScrollTo(0, mBinding.mainScroll.getBottom());
     }
@@ -1111,7 +1141,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
     }
 
     public void onEnableBackgroundClicked(View v) {
-        mBinding.permissionHolder.setVisibility(View.GONE);
+        mBinding.permissionHolder.setVisibility(GONE);
         prefsManager.setBackgroundEnabled("TRUE");
 
         Intent intent = new Intent(android.provider.Settings.ACTION_SETTINGS);
