@@ -15,7 +15,7 @@ def dl_video_with_audio(activity, video_url, out, filename, resolution):
 
     ydl_opts = {
         'format': "bestvideo[height<=" + resolution + "][ext=mp4]",
-        'outtmpl': out + filename + '.%(ext)s',
+        'outtmpl': out + filename + '_v.%(ext)s',
         'restrictfilenames': True,
         "cachedir": False,
         "ignoreerrors": True,
@@ -27,7 +27,7 @@ def dl_video_with_audio(activity, video_url, out, filename, resolution):
         return info_dict['format_id']
 
 
-def dl_audio(activity, video_url, out, filename, resolution):
+def dl_audio(activity, video_url, out, filename):
     # 'outtmpl': out + '%(title).25s.%(ext)s',
     progress_hook = create_progress_hook(activity)
 

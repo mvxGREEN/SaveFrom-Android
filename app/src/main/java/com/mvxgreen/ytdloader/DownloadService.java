@@ -95,13 +95,70 @@ public class DownloadService extends Service {
                     .logEvent("download_start", bundle);
         } catch (Exception ignored) {}
 
-        new DownloadVideoTask(MainActivity.activityCurrent).execute(url);
+        new DownloadAudioTask(MainActivity.activityCurrent).execute(url);
     }
 
-    //async method to extract audio from video in background
+    // async download audio
+    public static class DownloadAudioTask extends AsyncTask<String, Void, String> {
+        private static final String TAG = DownloadAudioTask.class.getCanonicalName();
+        String videoUrl;
+        DownloadVideoTask dvt;
+        PrefsManager prefsManager;
+
+        public DownloadAudioTask(Context ctx) {
+            this.dvt = new DownloadVideoTask((MainActivity)ctx);
+            prefsManager = new PrefsManager(ctx);
+        }
+
+        //this method will download the audio file by using python script
+        @Override
+        protected String doInBackground(String... urls) {
+            Log.i(TAG, "doInBackground()");
+            this.videoUrl = urls[0];
+            String resolution = mResolution.replaceAll("\\D", "");
+
+            Python py = Python.getInstance();
+            PyObject pyObject = py.getModule("vidloader");
+
+            // get video file extension
+            //PyObject resExt = pyObject.callAttr("extract_video_ext", videoUrl, resolution);
+            //vidExt = "." + resExt.toString();
+
+            String res = "";
+            try {
+                Log.i(TAG, "trying dl_audio");
+
+                PyObject result = pyObject.callAttr("dl_audio",
+                        MainActivity.activityCurrent,
+                        this.videoUrl,
+                        ABS_PATH_DOCS,
+                        prefsManager.getFileName());
+                res = result.toString();
+
+                Log.i(TAG, "format_ids: "+ res);
+                prefsManager.setFormatId(res);
+            } catch (Exception e) {
+                e.printStackTrace();
+                String msg = "error downloading audio: e="+e;
+                Log.e(TAG, msg);
+            }
+
+            return res;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            Log.i(TAG, "OnPostExecute");
+
+            // start dl_video
+            dvt.execute(this.videoUrl);
+        }
+    }
+
+    // async download video
     public static class DownloadVideoTask extends AsyncTask<String, Void, String> {
         private static final String TAG = DownloadVideoTask.class.getCanonicalName();
-        String vidExt, audExt = ".m4a";
+        String vidExt = ".mp4", audExt = ".m4a";
         PrefsManager prefsManager;
 
         public DownloadVideoTask(Context ctx) {
@@ -119,12 +176,12 @@ public class DownloadService extends Service {
             PyObject pyObject = py.getModule("vidloader");
 
             // get video file extension
-            PyObject resExt = pyObject.callAttr("extract_video_ext", videoUrl, resolution);
-            vidExt = "." + resExt.toString();
+            //PyObject resExt = pyObject.callAttr("extract_video_ext", videoUrl, resolution);
+            //vidExt = "." + resExt.toString();
 
             String res = "";
             try {
-                Log.i(TAG, "trying download with audio...");
+                Log.i(TAG, "trying dl_video");
                 PyObject result = pyObject.callAttr("dl_video_with_audio",
                         MainActivity.activityCurrent,
                         videoUrl,
@@ -155,8 +212,8 @@ public class DownloadService extends Service {
             // build filepaths
             String absFilename = prefsManager.getFileName() + vidExt;
             String absFilepath = ABS_PATH_DOCS + prefsManager.getFileName();
-            String absFilepathVideo = absFilepath + vidExt;
-            String absFilepathAudio = absFilepath + audExt;
+            String absFilepathVideo = absFilepath + "_v" + vidExt;
+            String absFilepathAudio = absFilepath + "_a" + audExt;
             absFilepath += vidExt;
 
             Log.i(TAG, "absFilePathVideo=" + absFilepathVideo
@@ -170,10 +227,10 @@ public class DownloadService extends Service {
             } catch (Exception ignored) {}
 
             // TODO merge video and audio
-            //ConcatRunner.mergeAV(absFilepath, absFilepathVideo, absFilepathAudio);
+            ConcatRunner.mergeAV(absFilepath, absFilepathVideo, absFilepathAudio);
 
             // TODO delete temp AV files
-            //ConcatRunner.deleteTempFiles(absFilepathVideo, absFilepathAudio);
+            ConcatRunner.deleteTempFiles(absFilepathVideo, absFilepathAudio);
 
             // scan new media
             File dl = new File(absFilepath);

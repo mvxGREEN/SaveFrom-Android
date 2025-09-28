@@ -40,7 +40,7 @@ public class PrefsManager {
         // Create & store default values, if necessary
         try {
             sharedPrefs = ctx.getSharedPreferences(
-                    ctx.getString(R.string.prefs_file_name),
+                    "ULOADER_PREFS",
                     Context.MODE_PRIVATE
             );
 

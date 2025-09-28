@@ -27,11 +27,6 @@ public final class ConcatRunner {
         } catch (IOException e) {
             Log.e(TAG, "Error merging files: " + e.getMessage());
         }
-        /*
-        finally {
-            deleteTempFiles(vFilepath, aFilepath);
-        }
-        */
     }
 
     /**
