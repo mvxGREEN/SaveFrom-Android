@@ -25,6 +25,7 @@ import androidx.core.app.ServiceCompat;
 
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
+import com.chaquo.python.android.AndroidPlatform;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.mvxgreen.ytdloader.manager.PrefsManager;
 
@@ -108,6 +109,7 @@ public class DownloadService extends Service {
         public DownloadAudioTask(Context ctx) {
             this.dvt = new DownloadVideoTask((MainActivity)ctx);
             prefsManager = new PrefsManager(ctx);
+            Python.start(new AndroidPlatform(ctx));
         }
 
         //this method will download the audio file by using python script
