@@ -15,11 +15,11 @@
     <!--uses-permission android:name="oppo.permission.OPPO_COMPONENT_SAFE"/-->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <uses-permission android:name="com.android.vending.BILLING" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_TOPICS" />
 
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        android:extractNativeLibs="true"
         android:fullBackupContent="@xml/backup_rules"
         android:requestLegacyExternalStorage="true"
         android:icon="@mipmap/ic_launcher_uloader"
