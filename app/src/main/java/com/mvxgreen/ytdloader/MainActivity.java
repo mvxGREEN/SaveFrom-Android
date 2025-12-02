@@ -93,6 +93,8 @@ import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import java.net.InetAddress;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements PurchasesUpdatedListener, AdapterView.OnItemSelectedListener {
@@ -588,6 +590,16 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         }
     }
 
+    public boolean isCurrentDateBeforeSpecificDate() {
+        LocalDate currentDate = LocalDate.now();
+
+        LocalDate specificDate = LocalDate.of(2025, 12, 4);
+
+        boolean isBefore = currentDate.isBefore(specificDate);
+
+        return isBefore;
+    }
+
     private void initMainViews() {
         initAnimations();
         mBinding.mainScroll.setSmoothScrollingEnabled(true);
@@ -614,8 +626,17 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                 } else if (count - oldCount > 1) {
                     String input = s.toString();
 
+                    boolean delay = false;
+                    if (input.contains("youtube.com") || input.contains("youtu.be")) {
+                        // validate date
+                        delay = isCurrentDateBeforeSpecificDate();
+                        String msg = "delay="+delay;
+                        Log.i(TAG, msg);
+                    }
+
+
                     // validate input
-                    if (!input.contains("https://")) {// log event
+                    if (!input.contains("https://") || delay) {
                         // log invalid input and exit
                         try {
                             Bundle bundle = new Bundle();
@@ -625,7 +646,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                                     .logEvent("invalid_input", bundle);
                         } catch (Exception ignored) {}
 
-                        Toast.makeText(MainActivity.this, "Please copy a video URL", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Video URL is not supported", Toast.LENGTH_SHORT).show();
                         return;
                     } else if (input.contains("instagram.com")) {
                         showBigFrag("InFlyer");

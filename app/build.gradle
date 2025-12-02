@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId "com.mvxgreen.ytdloader"
-        minSdk 24
+        minSdk 26
         targetSdk 36
         versionCode 18
         versionName "2.3.8"
