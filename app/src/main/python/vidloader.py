@@ -24,6 +24,25 @@ def dl_video_without_audio(activity, video_url, out, filename, resolution):
         return info_dict['format_id']
 
 
+def download_audio(activity, search, out):
+    progress_hook = create_progress_hook(activity)
+
+    # unique id to prevent accidental overwrite
+    filename_id = f"{random.randint(1,10)}{random.randint(1,10)}{random.randint(1,10)}{random.randint(1,10)} "
+
+    ydl_opts = {
+        'format': 'bestaudio',
+        'default_search': 'ytsearch1:' + search,
+        'noplaylist': True,
+        'cachedir': False,
+        'outtmpl': out + filename_id + '%(playlist).25s.mp3',
+        'progress_hooks': [progress_hook]
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info("", download=True)
+        return filename_id + info_dict['title'][0:25] + ".mp3"
+
+
 def create_progress_hook(a):
     def progress_hook(d):
         if d['status'] == 'downloading':
@@ -41,7 +60,7 @@ def extract_video_title(video_url, resolution):
         'format': "bestvideo[height<=" + resolution + "][ext=mp4]",
         'restrictfilenames': True,
         "cachedir": False,
-        "ignoreerrors": True,
+        "ignoreerrors": True
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(video_url, download=False)
@@ -54,7 +73,7 @@ def extract_video_ext(video_url, resolution):
         'format': "bestvideo[height<=" + resolution + "]",
         'restrictfilenames': True,
         "cachedir": False,
-        "ignoreerrors": True,
+        "ignoreerrors": True
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(video_url, download=False)
@@ -66,7 +85,7 @@ def extract_audio_ext(video_url):
         'format': "bestaudio",
         'restrictfilenames': True,
         "cachedir": False,
-        "ignoreerrors": True,
+        "ignoreerrors": True
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(video_url, download=False)
@@ -75,6 +94,8 @@ def extract_audio_ext(video_url):
 def extract_video_thumbnail(video_url, resolution):
     ydl_opts = {
         'format': "best[height<=" + resolution + "]/bestvideo[height<=" + resolution + "]",
+        "cachedir": False,
+        "ignoreerrors": True,
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(video_url, download=False)

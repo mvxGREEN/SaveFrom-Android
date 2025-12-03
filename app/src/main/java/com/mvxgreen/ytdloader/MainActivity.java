@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         }
 
         // check permissions
-        hasStoragePermissions();
+        //hasStoragePermissions();
 
         // register receivers
         mFinishReceiver = new FinishReceiver();
@@ -565,22 +565,6 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
         return p;
     }
 
-    private boolean hasStoragePermissions() {
-        if ((ActivityCompat.checkSelfPermission(
-                this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED)
-                && (ActivityCompat.checkSelfPermission(
-                this, Manifest.permission.READ_MEDIA_AUDIO)
-                != PackageManager.PERMISSION_GRANTED)) {
-            ActivityCompat.requestPermissions(MainActivity.this,
-                    getStoragePermissions(),
-                    1);
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     private boolean hasNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -593,7 +577,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
     public boolean isCurrentDateBeforeSpecificDate() {
         LocalDate currentDate = LocalDate.now();
 
-        LocalDate specificDate = LocalDate.of(2025, 12, 4);
+        LocalDate specificDate = LocalDate.of(2025, 12, 5);
 
         return currentDate.isBefore(specificDate);
     }
@@ -632,7 +616,6 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                         Log.i(TAG, msg);
                     }
 
-
                     // validate input
                     if (!input.contains("https://") || delay) {
                         // log invalid input and exit
@@ -644,7 +627,7 @@ public class MainActivity extends AppCompatActivity implements PurchasesUpdatedL
                                     .logEvent("invalid_input", bundle);
                         } catch (Exception ignored) {}
 
-                        Toast.makeText(MainActivity.this, "Video URL is not supported", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Video unavailable, try again later", Toast.LENGTH_SHORT).show();
                         return;
                     } else if (input.contains("instagram.com")) {
                         showBigFrag("InFlyer");
