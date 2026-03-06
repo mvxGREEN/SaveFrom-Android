@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import com.mvxgreen.ytdloader.R
+import androidx.core.content.edit
 
 /**
  * Provide access to formatting & shared preferences routines & constants
@@ -86,12 +87,12 @@ class PrefsManager(ctx: Context) {
                 "set " + key + " in shared prefs: {" + key + "," + value + "}"
             )
 
-            val editor = sharedPrefs!!.edit()
-            editor.putString(
-                key,
-                value
-            )
-            editor.apply()
+            sharedPrefs!!.edit {
+                putString(
+                    key,
+                    value
+                )
+            }
         }
 
     var fileName: String?
@@ -104,15 +105,15 @@ class PrefsManager(ctx: Context) {
 
             Log.i(
                 TAG,
-                "set " + key + " in shared prefs: {" + key + "," + value + "}"
+                "set $key in shared prefs: {$key,$value}"
             )
 
-            val editor = sharedPrefs!!.edit()
-            editor.putString(
-                key,
-                value
-            )
-            editor.apply()
+            sharedPrefs!!.edit {
+                putString(
+                    key,
+                    value
+                )
+            }
         }
 
     var thumbnailUrl: String?
@@ -125,15 +126,15 @@ class PrefsManager(ctx: Context) {
 
             Log.i(
                 TAG,
-                "set " + key + " in shared prefs: {" + key + "," + value + "}"
+                "set $key in shared prefs: {$key,$value}"
             )
 
-            val editor = sharedPrefs!!.edit()
-            editor.putString(
-                key,
-                value
-            )
-            editor.apply()
+            sharedPrefs!!.edit {
+                putString(
+                    key,
+                    value
+                )
+            }
         }
 
     var videoTitle: String?
@@ -146,40 +147,34 @@ class PrefsManager(ctx: Context) {
 
             Log.i(
                 TAG,
-                "set " + key + " in shared prefs: {" + key + "," + value + "}"
+                "set $key in shared prefs: {$key,$value}"
             )
 
-            val editor = sharedPrefs!!.edit()
-            editor.putString(
-                key,
-                value
-            )
-            editor.apply()
+            sharedPrefs!!.edit {
+                putString(
+                    key,
+                    value
+                )
+            }
         }
 
     var fileDir: String?
-        /**
-         * @return filepath for new file
-         */
+
         get() = sharedPrefs!!.getString("FOLDER_NAME", "")
-        /**
-         * Set folder for downloaded file
-         * @param value folder name
-         */
         set(value) {
             val key = "FOLDER_NAME"
 
             Log.i(
                 TAG,
-                "set " + key + " in shared prefs: {" + key + "," + value + "}"
+                "set $key in shared prefs: {$key,$value}"
             )
 
-            val editor = sharedPrefs!!.edit()
-            editor.putString(
-                key,
-                value
-            )
-            editor.apply()
+            sharedPrefs!!.edit {
+                putString(
+                    key,
+                    value
+                )
+            }
         }
 
     var fileExt: String?
@@ -196,15 +191,15 @@ class PrefsManager(ctx: Context) {
 
             Log.i(
                 TAG,
-                "set " + key + " in shared prefs: {" + key + "," + value + "}"
+                "set $key in shared prefs: {$key,$value}"
             )
 
-            val editor = sharedPrefs!!.edit()
-            editor.putString(
-                key,
-                value
-            )
-            editor.apply()
+            sharedPrefs!!.edit {
+                putString(
+                    key,
+                    value
+                )
+            }
         }
 
     var formatId: String?
@@ -214,15 +209,15 @@ class PrefsManager(ctx: Context) {
 
             Log.i(
                 TAG,
-                "set " + key + " in shared prefs: {" + key + "," + value + "}"
+                "set $key in shared prefs: {$key,$value}"
             )
 
-            val editor = sharedPrefs!!.edit()
-            editor.putString(
-                key,
-                value
-            )
-            editor.apply()
+            sharedPrefs!!.edit {
+                putString(
+                    key,
+                    value
+                )
+            }
         }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  COUNT RUNS  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -232,12 +227,12 @@ class PrefsManager(ctx: Context) {
         ++runs
         Log.i(TAG, "set pref: {" + key + "," + runs + "}")
 
-        val editor = sharedPrefs!!.edit()
-        editor.putInt(
-            key,
-            runs
-        )
-        editor.apply()
+        sharedPrefs!!.edit {
+            putInt(
+                key,
+                runs
+            )
+        }
     }
 
     val totalRuns: Int
@@ -251,13 +246,14 @@ class PrefsManager(ctx: Context) {
                 0
             )
         ++convs
-        Log.i(TAG, "set pref: {" + key + "," + convs + "}")
+        Log.i(TAG, "set pref: {$key,$convs}")
 
-        val editor = sharedPrefs!!.edit()
-        editor.putInt(
-            key,
-            convs
-        ).apply()
+        sharedPrefs!!.edit {
+            putInt(
+                key,
+                convs
+            )
+        }
         return convs
     }
 
@@ -268,15 +264,15 @@ class PrefsManager(ctx: Context) {
 
             Log.i(
                 TAG,
-                "set " + key + " in shared prefs: {" + key + "," + value + "}"
+                "set $key in shared prefs: {$key,$value}"
             )
 
-            val editor = sharedPrefs!!.edit()
-            editor.putString(
-                key,
-                value
-            )
-            editor.apply()
+            sharedPrefs!!.edit {
+                putString(
+                    key,
+                    value
+                )
+            }
         }
 
     var isGold: Boolean
@@ -286,19 +282,19 @@ class PrefsManager(ctx: Context) {
 
             Log.i(
                 TAG,
-                "set " + key + " in shared prefs: {" + key + "," + value + "}"
+                "set $key in shared prefs: {$key,$value}"
             )
 
-            val editor = sharedPrefs!!.edit()
-            editor.putBoolean(
-                key,
-                value
-            )
-            editor.apply()
+            sharedPrefs!!.edit {
+                putBoolean(
+                    key,
+                    value
+                )
+            }
         }
 
     companion object {
-        private val TAG: String = PrefsManager::class.java.getCanonicalName()
+        private val TAG: String = "PrefsManager"
 
         private val KEY_IDS = intArrayOf(
             R.string.prefs_key_download_url,

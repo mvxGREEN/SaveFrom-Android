@@ -43,7 +43,7 @@ class FileFragment : Fragment() {
             ""
         val video = File(absFilePath)
         val uri = FileProvider.getUriForFile(
-            container?.getContext() ?: MainActivity.activityCurrent,
+            MainActivity.activityCurrent!!,
             ctx?.getApplicationContext()
                 ?.getPackageName() + ".provider", video
         )
