@@ -89,5 +89,7 @@
     <string name="frag_upgrade_negative">Nah</string>
     <string name="frag_update_yearly">Yearly</string>
     <string name="frag_upgrade_positive">Get It!</string>
+    <string name="paste_url">Paste Link…</string>
+    <string name="clear_button">clear button</string>
 
 </resources>

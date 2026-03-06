@@ -600,7 +600,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener,
         setSupportActionBar(toolbar)
 
         // search bar
-        mBinding!!.mainSearchBar.addTextChangeListener(object : TextWatcher {
+        mBinding!!.etMainInput.addTextChangedListener(object : TextWatcher {
             var oldCount: Int = 0
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -734,7 +734,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener,
     fun killKeyboard() {
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(
-            findViewById<View?>(R.id.main_search_bar).getWindowToken(),
+            findViewById<View?>(R.id.etMainInput).getWindowToken(),
             0
         )
     }
@@ -873,11 +873,11 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener,
 
         mBinding!!.imgPreview.setVisibility(View.GONE)
         mBinding!!.glowingLoader.setVisibility(View.GONE)
-        mBinding!!.mainSearchBar.setText("")
+        mBinding!!.etMainInput.setText("")
         mBinding!!.btnDownload.setVisibility(View.GONE)
         mBinding!!.btnDownload.setEnabled(false)
         mBinding!!.numProgress.setVisibility(View.GONE)
-        mBinding!!.ivCircle.setVisibility(View.VISIBLE)
+        mBinding!!.ivCircle.setVisibility(View.GONE)
         mBinding!!.btnPaste.setVisibility(View.VISIBLE)
         mBinding!!.filenameEdittext.setEnabled(false)
         mBinding!!.filenameEdittext.setHintTextColor(getColor(R.color.shadowInvisible))
@@ -1009,7 +1009,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener,
         mBinding!!.btnDownload.setEnabled(false)
         mBinding!!.btnPaste.setVisibility(View.VISIBLE)
         mBinding!!.btnPaste.setEnabled(true)
-        mBinding!!.ivCircle.setVisibility(View.VISIBLE)
+        mBinding!!.ivCircle.setVisibility(View.GONE)
         mBinding!!.numProgress.setVisibility(View.GONE)
         mBinding!!.numProgress.setProgress(0)
         mBinding!!.mainScroll.smoothScrollTo(0, mBinding!!.mainScroll.getBottom())
@@ -1095,7 +1095,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener,
      */
     fun onPasteClick(v: View?) {
         // clear search bar
-        mBinding!!.mainSearchBar.setText("")
+        mBinding!!.etMainInput.setText("")
 
         // paste from clipboard
         val clipboardManager =
@@ -1106,14 +1106,14 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener,
             primaryStr = primaryClip.getItemAt(0).getText().toString()
             primaryStr = primaryStr.trim { it <= ' ' }
 
-            mBinding!!.mainSearchBar.setText(primaryStr)
+            mBinding!!.etMainInput.setText(primaryStr)
         } else {
             Toast.makeText(
                 this@MainActivity, "Please copy a video link",
                 Toast.LENGTH_LONG
             ).show()
 
-            mBinding!!.mainSearchBar.setText(primaryStr)
+            mBinding!!.etMainInput.setText(primaryStr)
         }
     }
 
