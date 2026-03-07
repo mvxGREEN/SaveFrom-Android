@@ -611,11 +611,24 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
         }
 
         val spinner = findViewById<Spinner>(R.id.res_spinner)
-        val adapter = ArrayAdapter.createFromResource(
-            this,
-            R.array.res_array,
-            android.R.layout.simple_spinner_item
-        )
+
+        val resArray = resources.getStringArray(R.array.res_array)
+
+        val adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, resArray) {
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+
+                // 3. Alternate the background based on odd/even positions
+                if (position % 2 == 0) {
+                    view.setBackgroundResource(R.drawable.bg_spinner_item)
+                } else {
+                    view.setBackgroundResource(R.drawable.bg_spinner_item_alt)
+                }
+
+                return view
+            }
+        }
+
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinner.adapter = adapter
 

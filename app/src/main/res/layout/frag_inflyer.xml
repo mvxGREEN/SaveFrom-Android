@@ -87,7 +87,7 @@
             android:layout_margin="4dp"
             android:text="@string/get_it"
             android:textColor="@color/shadowDarker"
-            android:background="@drawable/bg_rounded_sweep_inverse"
+            android:background="@drawable/bg_spinner_item_alt"
             android:onClick="onGetInflyerClick"/>
 
     </LinearLayout>

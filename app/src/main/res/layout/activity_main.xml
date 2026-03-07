@@ -188,7 +188,7 @@
                                 android:layout_height="match_parent"
                                 android:layout_marginVertical="4dp"
                                 android:layout_marginStart="8dp"
-                                android:background="@drawable/bg_rounded_sweep_inverse" />
+                                android:background="@drawable/bg_spinner_item_round" />
 
                             <!-- FILENAME EDITOR -->
                             <EditText
