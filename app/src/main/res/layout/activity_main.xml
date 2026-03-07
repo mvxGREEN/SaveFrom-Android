@@ -34,6 +34,37 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- LOADING OVERLAY -->
+    <LinearLayout
+        android:id="@+id/loading_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="30dp"
+        android:orientation="vertical"
+        android:visibility="invisible"
+        android:gravity="center"
+        android:elevation="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ProgressBar
+            android:id="@+id/progress_ring"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:indeterminateTint="?attr/colorOnSurface" />
+
+        <TextView
+            android:id="@+id/progress_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/loading"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="16sp" />
+    </LinearLayout>
+
     <!-- VERTICAL SCROLL -->
     <ScrollView
         android:id="@+id/main_scroll"
@@ -112,7 +143,8 @@
                     android:layout_margin="@dimen/spacing_large"
                     app:cardBackgroundColor="@color/shadowInverseLight"
                     app:cardCornerRadius="16dp"
-                    app:cardElevation="@dimen/elevation_low">
+                    app:cardElevation="@dimen/elevation_low"
+                    android:alpha="0.0">
 
                     <!-- WEBVIEW -->
                     <WebView
@@ -130,7 +162,7 @@
                         android:layout_height="match_parent"
                         android:elevation="@dimen/elevation_middle"
                         android:contentDescription="@string/cont_desc_preview"
-                        android:visibility="invisible" />
+                        android:visibility="visible" />
 
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:id="@+id/container_preview"
@@ -156,20 +188,40 @@
                             android:background="@drawable/bg_rounded_sweep"
                             android:visibility="gone"/>
 
-                        <!-- GLOW LOADER -->
-                        <com.varunest.loader.TheGlowingLoader
-                            android:id="@+id/glowing_loader"
+                        <!-- DOWNLOADING OVERLAY -->
+                        <FrameLayout
+                            android:id="@+id/overlay_downloading"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:layout_marginTop="@dimen/spacing_xxxlarge"
-                            android:elevation="@dimen/elevation_middle"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintLeft_toLeftOf="parent"
-                            app:layout_constraintRight_toRightOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:theglowingloader_line_1_color="@color/colorPrimary"
-                            app:theglowingloader_line_2_color="@color/colorAccent"
-                            android:visibility="gone"/>
+                            android:background="#99000000"
+                            android:visibility="invisible">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_gravity="center"
+                                android:gravity="center"
+                                android:orientation="vertical">
+
+                                <ProgressBar
+                                    android:id="@+id/progress_ring_dlr"
+                                    style="?android:attr/progressBarStyleHorizontal"
+                                    android:layout_width="160dp"
+                                    android:layout_height="wrap_content"
+                                    android:elevation="8dp"
+                                    android:indeterminate="true"
+                                    android:progressTint="?attr/colorPrimary" />
+
+                                <TextView
+                                    android:id="@+id/dl_progress_text"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:text="@string/downloading"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="16sp" />
+                            </LinearLayout>
+                        </FrameLayout>
 
                         <!-- BUTTON PANEL -->
                         <LinearLayout android:name="@+id/button_panel"
@@ -187,10 +239,19 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="match_parent"
                                 android:layout_marginVertical="4dp"
-                                android:layout_marginStart="8dp"
+                                android:layout_margin="4dp"
                                 android:background="@drawable/bg_spinner_item_round" />
 
-                            <!-- FILENAME EDITOR -->
+                            <!-- RESOLUTION SPINNER -->
+                            <Spinner
+                                android:id="@+id/type_spinner"
+                                android:layout_width="wrap_content"
+                                android:layout_height="match_parent"
+                                android:layout_margin="4dp"
+                                android:visibility="gone"
+                                android:background="@drawable/bg_spinner_item_round" />
+
+                            <!-- FILENAME EDITOR
                             <EditText
                                 android:id="@+id/filename_edittext"
                                 android:layout_width="0dp"
@@ -213,6 +274,7 @@
                                 android:background="@drawable/bg_rounded_sweep"
                                 android:visibility="visible"
                                 android:enabled="false" />
+                            -->
 
                             <!-- DOWNLOAD PROGRESS -->
                             <com.daimajia.numberprogressbar.NumberProgressBar
@@ -276,11 +338,113 @@
 
                 </androidx.cardview.widget.CardView>
 
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/downloader_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginHorizontal="16dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardBackgroundColor="?attr/colorSurface"
+                    app:cardElevation="2dp"
+                    android:alpha="0.0"
+                    app:layout_constraintTop_toBottomOf="@+id/preview_card">
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp">
+
+                        <FrameLayout
+                            android:id="@+id/action_container"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:elevation="8dp"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toBottomOf="parent">
+
+                            <ImageButton
+                                android:id="@+id/dl_btn"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/ic_download"
+                                app:tint="?attr/colorOnSurface"
+                                android:contentDescription="Download" />
+
+                            <ImageButton
+                                android:id="@+id/finish_btn"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/ic_check"
+                                app:tint="?attr/colorOnSurface"
+                                android:alpha="0.8"
+                                android:visibility="invisible"
+                                android:contentDescription="Finished" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/preview_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text="Title"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="18sp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:layout_marginStart="16dp"
+                            app:layout_constraintEnd_toStartOf="@+id/share_container"
+                            app:layout_constraintStart_toEndOf="@+id/action_container"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toTopOf="@+id/preview_subtitle"
+                            app:layout_constraintVertical_chainStyle="packed"/>
+
+                        <TextView
+                            android:id="@+id/preview_subtitle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:text=""
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:textSize="14sp"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginTop="4dp"
+                            app:layout_constraintEnd_toStartOf="@+id/share_container"
+                            app:layout_constraintStart_toEndOf="@+id/action_container"
+                            app:layout_constraintTop_toBottomOf="@+id/preview_title"
+                            app:layout_constraintBottom_toBottomOf="parent"/>
+
+                        <FrameLayout
+                            android:id="@+id/share_container"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:elevation="8dp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toBottomOf="parent">
+
+                            <ImageButton
+                                android:id="@+id/share_btn"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/ic_share_40"
+                                app:tint="?attr/colorOnSurface"
+                                android:alpha="1.0"
+                                android:visibility="invisible"
+                                android:contentDescription="Share button" />
+                        </FrameLayout>
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </androidx.cardview.widget.CardView>
+
                 <!-- AD BANNER -->
                 <FrameLayout
                     android:id="@+id/banner_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
                     app:layout_constraintTop_toBottomOf="@id/preview_card"
                     android:visibility="invisible">
 

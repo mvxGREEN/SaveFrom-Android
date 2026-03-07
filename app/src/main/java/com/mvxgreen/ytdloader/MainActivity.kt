@@ -6,7 +6,6 @@ import android.app.AlertDialog
 import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.graphics.drawable.Animatable
 import android.graphics.drawable.ColorDrawable
 import android.media.MediaScannerConnection
 import android.net.Uri
@@ -15,6 +14,7 @@ import android.provider.MediaStore
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
+import android.text.format.Formatter
 import android.util.Log
 import android.view.*
 import android.view.animation.AccelerateInterpolator
@@ -46,11 +46,10 @@ import com.mvxgreen.ytdloader.manager.AdsManager
 import com.mvxgreen.ytdloader.manager.MediaManager
 import com.mvxgreen.ytdloader.manager.MediaManager.Companion.MIME_MP4
 import com.mvxgreen.ytdloader.manager.PrefsManager
-import com.squareup.picasso.Callback
-import com.squareup.picasso.Picasso
 import java.net.InetAddress
 import java.time.LocalDate
 import androidx.core.net.toUri
+import com.bumptech.glide.Glide
 import com.google.firebase.FirebaseApp
 import com.mvxgreen.ytdloader.databinding.DialogCutterBinding
 import com.mvxgreen.ytdloader.databinding.DialogRateBinding
@@ -61,18 +60,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import kotlin.math.abs
+import kotlin.toString
 
 class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.OnItemSelectedListener {
     private lateinit var firebaseAnalytics: FirebaseAnalytics
     private var mDownloadService: DownloadService? = null
-    lateinit var mBinding: ActivityMainBinding
+    lateinit var binding: ActivityMainBinding
     private lateinit var fadeIn: Animation
     private lateinit var fadeOut: Animation
     private var fileFragment: FileFragment? = null
 
     private lateinit var prefsManager: PrefsManager
     private lateinit var mFinishReceiver: FinishReceiver
+
+    private var downloadedFileUri: Uri? = null
 
     private lateinit var androidPlatform: AndroidPlatform
 
@@ -111,6 +112,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
     // billing
     private var billingClient: BillingClient? = null
 
+    enum class UIState { EMPTY, LOADING, PREVIEW, DOWNLOADING, FINISHED }
+
     companion object {
         private val TAG = MainActivity::class.java.canonicalName
 
@@ -128,6 +131,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
 
         @JvmField
         var mResolution = "2160p"
+
+        @JvmField
+        var mFileType = "video"
 
         @JvmField
         var MIsGold = false
@@ -173,8 +179,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
             val progress = cleanProgressStr.toDouble().toInt()
 
             activityCurrent?.runOnUiThread {
-                activityCurrent?.mBinding?.numProgress?.visibility = View.VISIBLE
-                activityCurrent?.mBinding?.numProgress?.progress = progress
+                activityCurrent?.binding?.dlProgressText?.text = progressStr
+                activityCurrent?.binding?.progressRingDlr?.max = 100
+                activityCurrent?.binding?.progressRingDlr?.progress = progress
             }
 
             activityCurrent?.mDownloadService?.setProgress(100, progress)
@@ -204,8 +211,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
         FirebaseApp.initializeApp(this)
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
-        mBinding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(mBinding.root)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         // Fixes "strict-mode" error when fetching webpage
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
@@ -215,7 +222,8 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
         isBackgroundEnabled = prefsManager.backgroundEnabled?.isNotEmpty() ?: false
         Log.i(TAG, "isBackgroundEnabled=$isBackgroundEnabled")
 
-        initMainViews()
+        setupMainViews()
+        setupListeners()
 
         if (!Python.isStarted()) {
             androidPlatform = AndroidPlatform(this)
@@ -428,7 +436,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
                         sharedPref.edit().putBoolean("IS_GOLD", true).apply()
                         MIsGold = true
 
-                        mBinding.bannerContainer.visibility = View.GONE
+                        binding.bannerContainer.visibility = View.GONE
 
                         runOnUiThread {
                             val toolbar = findViewById<Toolbar>(R.id.toolbar)
@@ -452,14 +460,14 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
                 val sharedPref = getSharedPreferences("SaveFromPrefs", Context.MODE_PRIVATE)
                 sharedPref.edit().putBoolean("IS_GOLD", true).apply()
                 MIsGold = true
-                mBinding.bannerContainer.visibility = View.GONE
+                binding.bannerContainer.visibility = View.GONE
 
                 runOnUiThread {
                     Toast.makeText(this@MainActivity, "Thank you, enjoy! <3", Toast.LENGTH_LONG).show()
                     val toolbar = findViewById<Toolbar>(R.id.toolbar)
                     val upgradeItem = toolbar.menu.findItem(R.id.action_upgrade)
                     upgradeItem?.icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.diamond_24_gold)
-                    showEmptyLayout()
+                    updateUI(UIState.EMPTY)
                 }
             }
         }
@@ -480,9 +488,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
 
                     if (consentInformation.canRequestAds() && !MIsGold) {
                         MobileAds.initialize(this) {}
-                        mBinding.bannerContainer.visibility = View.VISIBLE
+                        binding.bannerContainer.visibility = View.VISIBLE
                         AdsManager.loadAdmobInterstitialAd(this@MainActivity)
-                        AdsManager.loadBanner(this@MainActivity, mBinding)
+                        AdsManager.loadBanner(this@MainActivity, binding)
                     }
 
                     if (isPrivacyOptionsRequired()) {
@@ -497,9 +505,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
 
         if (consentInformation.canRequestAds() && !MIsGold) {
             MobileAds.initialize(this) {}
-            mBinding.bannerContainer.visibility = View.VISIBLE
+            binding.bannerContainer.visibility = View.VISIBLE
             AdsManager.loadAdmobInterstitialAd(this@MainActivity)
-            AdsManager.loadBanner(this@MainActivity, mBinding)
+            AdsManager.loadBanner(this@MainActivity, binding)
         }
     }
 
@@ -527,14 +535,78 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
         }
     }
 
-    private fun initMainViews() {
+    private fun setupMainViews() {
         initAnimations()
-        mBinding.mainScroll.isSmoothScrollingEnabled = true
+        binding.mainScroll.isSmoothScrollingEnabled = true
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
 
-        mBinding.etMainInput.addTextChangedListener(object : TextWatcher {
+        // resolution spinner
+        val resSpinner = findViewById<Spinner>(R.id.res_spinner)
+        val resArray = resources.getStringArray(R.array.res_array)
+        val adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, resArray) {
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+
+                // 3. Alternate the background based on odd/even positions
+                if (position % 2 == 0) {
+                    view.setBackgroundResource(R.drawable.bg_spinner_item)
+                } else {
+                    view.setBackgroundResource(R.drawable.bg_spinner_item_alt)
+                }
+
+                return view
+            }
+        }
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        resSpinner.adapter = adapter
+        val sharedPref = getSharedPreferences("SaveFromPrefs", Context.MODE_PRIVATE)
+        val selectionIndex = sharedPref.getInt("RES_POSITION", 0)
+        resSpinner.setSelection(selectionIndex)
+        resSpinner.onItemSelectedListener = this
+
+        // filetype spinner
+        val typeSpinner = findViewById<Spinner>(R.id.type_spinner)
+        val typeArray = resources.getStringArray(R.array.type_array)
+        val typeAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, typeArray) {
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+
+                // 3. Alternate the background based on odd/even positions
+                if (position % 2 == 0) {
+                    view.setBackgroundResource(R.drawable.bg_spinner_item)
+                } else {
+                    view.setBackgroundResource(R.drawable.bg_spinner_item_alt)
+                }
+
+                return view
+            }
+        }
+        typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        typeSpinner.adapter = typeAdapter
+        typeSpinner.setSelection(0)
+        typeSpinner.onItemSelectedListener = this
+
+        if (!isBackgroundEnabled) {
+            Log.i(TAG, "showing permission holder")
+            binding.permissionHolder.visibility = View.VISIBLE
+        }
+    }
+
+    private fun initAnimations() {
+        fadeIn = AnimationUtils.loadAnimation(this@MainActivity, R.anim.fade_in).apply {
+            duration = 432
+            interpolator = AccelerateInterpolator()
+        }
+        fadeOut = AnimationUtils.loadAnimation(this@MainActivity, R.anim.fade_out).apply {
+            duration = 432
+            interpolator = AccelerateInterpolator()
+        }
+    }
+
+    private fun setupListeners() {
+        binding.etMainInput.addTextChangedListener(object : TextWatcher {
             var oldCount = 0
 
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
@@ -544,7 +616,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 if (count == 0 && oldCount != 0) {
                     killKeyboard()
-                    showEmptyLayout()
+                    updateUI(UIState.EMPTY)
                 } else if (count - oldCount > 1) {
                     var input = s.toString()
                     var delay = false
@@ -589,7 +661,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
                     } catch (ignored: Exception) {}
 
                     killKeyboard()
-                    showLoadingLayout()
+                    updateUI(UIState.LOADING)
 
                     if (isInternetAvailable()) {
                         prefsManager.originalUrl = inputText
@@ -601,56 +673,29 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
             }
 
             override fun afterTextChanged(s: Editable) {
-                mBinding.btnClear.visibility = if (s.isNullOrEmpty()) View.INVISIBLE else View.VISIBLE
+                binding.btnClear.visibility = if (s.isNullOrEmpty()) View.INVISIBLE else View.VISIBLE
             }
         })
 
-        mBinding.btnClear.setOnClickListener {
-            mBinding.etMainInput.setText("")
-            showEmptyLayout()
+        binding.btnClear.setOnClickListener {
+            binding.etMainInput.setText("")
+            updateUI(UIState.EMPTY)
         }
 
-        val spinner = findViewById<Spinner>(R.id.res_spinner)
+        binding.dlBtn.setOnClickListener {
+            updateUI(UIState.DOWNLOADING)
 
-        val resArray = resources.getStringArray(R.array.res_array)
-
-        val adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, resArray) {
-            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = super.getDropDownView(position, convertView, parent)
-
-                // 3. Alternate the background based on odd/even positions
-                if (position % 2 == 0) {
-                    view.setBackgroundResource(R.drawable.bg_spinner_item)
-                } else {
-                    view.setBackgroundResource(R.drawable.bg_spinner_item_alt)
-                }
-
-                return view
+            val intent = Intent(this@MainActivity, DownloadService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
             }
+            bindService(intent, dlServiceConn, Context.BIND_AUTO_CREATE)
         }
 
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = adapter
-
-        val sharedPref = getSharedPreferences("SaveFromPrefs", Context.MODE_PRIVATE)
-        val selectionIndex = sharedPref.getInt("RES_POSITION", 0)
-        spinner.setSelection(selectionIndex)
-        spinner.onItemSelectedListener = this
-
-        if (!isBackgroundEnabled) {
-            Log.i(TAG, "showing permission holder")
-            mBinding.permissionHolder.visibility = View.VISIBLE
-        }
-    }
-
-    private fun initAnimations() {
-        fadeIn = AnimationUtils.loadAnimation(this@MainActivity, R.anim.fade_in).apply {
-            duration = 432
-            interpolator = AccelerateInterpolator()
-        }
-        fadeOut = AnimationUtils.loadAnimation(this@MainActivity, R.anim.fade_out).apply {
-            duration = 432
-            interpolator = AccelerateInterpolator()
+        binding.shareBtn.setOnClickListener {
+            shareDownloadedFile()
         }
     }
 
@@ -755,183 +800,140 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
         fragHolder.visibility = View.GONE
     }
 
-    private fun showEmptyLayout() {
-        Log.i(TAG, "showEmptyLayout")
+    private fun updateUI(state: UIState) {
+        binding.etMainInput.isEnabled = true
+        binding.btnPaste.isEnabled = true
+        binding.btnPaste.alpha = 1.0f
 
-        closeBigFrag()
-        closeFileFrag()
-
-        mBinding.imgPreview.visibility = View.GONE
-        mBinding.glowingLoader.visibility = View.GONE
-        mBinding.etMainInput.setText("")
-        mBinding.btnDownload.visibility = View.GONE
-        mBinding.btnDownload.isEnabled = false
-        mBinding.numProgress.visibility = View.GONE
-        mBinding.ivCircle.visibility = View.GONE
-        mBinding.filenameEdittext.isEnabled = false
-        mBinding.filenameEdittext.setHintTextColor(getColor(R.color.shadowInvisible))
-        mBinding.filenameEdittext.setText("")
-        mBinding.btnPaste.isEnabled = true
-
-        if (!isBackgroundEnabled) {
-            Log.i(TAG, "showing permission holder")
-            mBinding.permissionHolder.visibility = View.VISIBLE
+        // get input_url for analytics event
+        var url = binding.etMainInput.text.toString()
+        if (url.contains("https://")) {
+            url = url.substringAfter("https://"+8)
         }
-    }
 
-    private fun showLoadingLayout() {
-        Log.i(TAG, "showLoadingLayout()")
-        Toast.makeText(this, "Loading… this may take a moment", Toast.LENGTH_LONG).show()
+        when (state) {
+            UIState.EMPTY -> {
+                Log.d("MainActivity", "sf_ui_empty")
+                //logEvent("sl_ui_empty")
+                binding.loadingLayout.visibility = View.INVISIBLE
+                binding.previewCard.visibility = View.INVISIBLE
+                binding.previewCard.alpha = 0.0f
+                binding.downloaderCard.visibility = View.INVISIBLE
+                binding.overlayDownloading.visibility = View.INVISIBLE
 
-        closeFileFrag()
-        mBinding.imgPreview.visibility = View.INVISIBLE
-        mBinding.btnDownload.visibility = View.GONE
-        mBinding.btnDownload.isEnabled = false
-        mBinding.numProgress.visibility = View.GONE
-        mBinding.glowingLoader.startAnimation(fadeIn)
-        mBinding.glowingLoader.visibility = View.VISIBLE
-        mBinding.ivCircle.visibility = View.GONE
-        mBinding.btnPaste.isEnabled = false
+                binding.finishBtn.visibility = View.GONE
+                binding.finishBtn.alpha = 0.0f
+                binding.shareBtn.visibility = View.INVISIBLE
+                binding.shareBtn.alpha = 0.0f
 
-        runOnUiThread {
-            if (!MIsGold) {
-                AdsManager.showInterstitialAd(this@MainActivity)
+                binding.previewTitle.text = ""
+                binding.previewSubtitle.text = ""
+
+                binding.progressLabel.text = ""
+            }
+            UIState.LOADING -> {
+                Log.d("MainActivity", "sf_ui_loading")
+                logEvent("sf_ui_loading", url, "")
+
+                binding.previewCard.visibility = View.INVISIBLE
+                binding.downloaderCard.visibility = View.INVISIBLE
+                binding.overlayDownloading.visibility = View.INVISIBLE // Was GONE
+                binding.etMainInput.isEnabled = false
+
+                binding.progressLabel.text = getString(R.string.loading)
+                binding.loadingLayout.visibility = View.VISIBLE
+
+                binding.btnPaste.isEnabled = false
+                binding.btnPaste.alpha = 0.5f
+                binding.shareBtn.visibility = View.INVISIBLE
+                binding.shareBtn.alpha = 0.0f
+            }
+            UIState.PREVIEW -> {
+                Log.d("MainActivity", "sf_ui_preview")
+                logEvent("sf_ui_preview", url, "")
+
+                binding.loadingLayout.visibility = View.INVISIBLE
+                binding.previewCard.alpha = 1.0f
+                binding.previewCard.visibility = View.VISIBLE
+                binding.downloaderCard.alpha = 1.0f
+                binding.downloaderCard.visibility = View.VISIBLE
+                binding.overlayDownloading.visibility = View.INVISIBLE // Was GONE
+                binding.dlBtn.visibility = View.VISIBLE
+
+                binding.finishBtn.visibility = View.GONE
+                binding.finishBtn.alpha = 0.0f
+                binding.shareBtn.visibility = View.INVISIBLE
+                binding.shareBtn.alpha = 0.0f
+
+                Glide.with(this@MainActivity)
+                    .load(prefsManager.thumbnailUrl)
+                    .centerCrop()
+                    .into(binding.imgPreview)
+
+                binding.previewTitle.text = prefsManager.fileName
+                binding.previewSubtitle.text = prefsManager.fileSize
+
+                // Show Interstitial if not Gold
+                AdsManager.showInterstitialAd(this)
+            }
+            UIState.DOWNLOADING -> {
+                Log.d("MainActivity", "sf_ui_downloading")
+                logEvent("sf_ui_downloading", url, "")
+                binding.dlProgressText.text = getString(R.string.downloading)
+                binding.progressRingDlr.isIndeterminate = false
+                binding.loadingLayout.visibility = View.INVISIBLE
+                binding.previewCard.visibility = View.VISIBLE
+                binding.downloaderCard.visibility = View.VISIBLE
+                binding.overlayDownloading.visibility = View.VISIBLE
+                binding.dlBtn.visibility = View.INVISIBLE
+                binding.etMainInput.isEnabled = false
+
+                binding.btnPaste.isEnabled = false
+                binding.btnPaste.alpha = 0.5f
+                binding.shareBtn.visibility = View.INVISIBLE
+                binding.shareBtn.alpha = 0.0f
+            }
+            UIState.FINISHED -> {
+                Log.d("MainActivity", "sf_ui_finished")
+                logEvent("sf_ui_finished", url, "")
+                binding.overlayDownloading.visibility = View.INVISIBLE // Was GONE
+                binding.finishBtn.visibility = View.VISIBLE
+                binding.finishBtn.animate().alpha(0.5f)
+
+                binding.shareBtn.visibility = View.VISIBLE
+                binding.shareBtn.animate().alpha(1.0f)
+
+                incrementSuccessfulRuns()
             }
         }
-    }
-
-    private fun showPreviewLayout() {
-        Log.i(TAG, "showPreviewLayout()")
-        val thumbnailUrl = prefsManager.thumbnailUrl
-
-        updateEditFilenameView(prefsManager.fileName!!)
-        mBinding.imgPreview.alpha = 1.0f
-        mBinding.imgPreview.visibility = View.VISIBLE
-        mBinding.btnPaste.isEnabled = true
-
-        val builder = Picasso.Builder(this@MainActivity)
-        builder.listener { _, _, _ ->
-            // TODO handle picasso error
-        }
-
-        if (thumbnailUrl?.isNotEmpty() ?: false) {
-            builder.build().load(thumbnailUrl)
-                .fit()
-                .centerCrop()
-                .into(mBinding.imgPreview, previewCallback)
-        }
-    }
-
-    private val previewCallback = object : Callback {
-        override fun onSuccess() {
-            Log.i(TAG, "onSuccess() decorating preview...")
-            mBinding.glowingLoader.startAnimation(fadeOut)
-            mBinding.glowingLoader.visibility = View.GONE
-            mBinding.numProgress.visibility = View.GONE
-            mBinding.ivCircle.visibility = View.VISIBLE
-            (mBinding.ivCircle.drawable as Animatable).start()
-
-            Handler(Looper.getMainLooper()).postDelayed({
-                mBinding.btnDownload.visibility = View.VISIBLE
-                mBinding.btnDownload.isEnabled = true
-                mBinding.btnDownload.startAnimation(fadeIn)
-                mBinding.filenameEdittext.isEnabled = true
-                mBinding.filenameEdittext.setHintTextColor(getColor(R.color.shadowInverse))
-            }, 432)
-        }
-
-        override fun onError(e: Exception) {
-            Log.e("onPicassoFinished", ".onError()")
-            e.printStackTrace()
-            mBinding.glowingLoader.startAnimation(fadeOut)
-            mBinding.glowingLoader.visibility = View.GONE
-            mBinding.imgPreview.visibility = View.GONE
-            mBinding.ivCircle.visibility = View.GONE
-            //(mBinding.ivCircle.drawable as Animatable).start()
-
-            Handler(Looper.getMainLooper()).postDelayed({
-                mBinding.btnDownload.visibility = View.VISIBLE
-                mBinding.btnDownload.isEnabled = true
-                mBinding.filenameEdittext.isEnabled = true
-                mBinding.filenameEdittext.setHintTextColor(getColor(R.color.shadowInverse))
-                mBinding.mainScroll.smoothScrollTo(0, mBinding.fileHintHolder.bottom)
-            }, 432)
-        }
-    }
-
-    private fun showDownloadingLayout() {
-        Log.i(TAG, "showDownloadingLayout()")
-        Toast.makeText(this, "Downloading in background…", Toast.LENGTH_SHORT).show()
-
-        updateFilenamePref()
-        mBinding.btnDownload.isEnabled = false
-        mBinding.btnDownload.startAnimation(fadeOut)
-        mBinding.ivCircle.visibility = View.GONE
-        mBinding.btnDownload.visibility = View.GONE
-        mBinding.imgPreview.alpha = 0.69f
-        mBinding.numProgress.visibility = View.VISIBLE
-        mBinding.numProgress.progress = 0
-        mBinding.btnPaste.isEnabled = false
-
-        Handler(Looper.getMainLooper()).postDelayed({
-            mBinding.glowingLoader.startAnimation(fadeIn)
-            mBinding.glowingLoader.visibility = View.VISIBLE
-            mBinding.filenameEdittext.isEnabled = false
-            mBinding.filenameEdittext.setHintTextColor(getColor(R.color.shadowInvisible))
-        }, 200)
-    }
-
-    private fun showFinishLayout() {
-        Log.i(TAG, "showFinishLayout()")
-        showFileFrag()
-
-        mBinding.glowingLoader.visibility = View.GONE
-        mBinding.imgPreview.alpha = 1.0f
-        mBinding.btnDownload.visibility = View.GONE
-        mBinding.btnDownload.isEnabled = false
-        mBinding.btnPaste.isEnabled = true
-        mBinding.ivCircle.visibility = View.GONE
-        mBinding.numProgress.visibility = View.GONE
-        mBinding.numProgress.progress = 0
-        mBinding.mainScroll.smoothScrollTo(0, mBinding.mainScroll.bottom)
-    }
-
-    fun updateFilenamePref() {
-        val input = mBinding.filenameEdittext.text.toString()
-        if (input.isEmpty()) {
-            prefsManager.fileName = "VIDEO_LOADER_DOWNLOAD"
-        } else {
-            prefsManager.fileName = input
-        }
-    }
-
-    fun updateEditFilenameView(fileName: String) {
-        var name = fileName
-        if (name.indexOf('.') != -1) {
-            name = name.substring(0, name.lastIndexOf('.'))
-        }
-        mBinding.filenameEdittext.setText(name)
     }
 
     private fun loadVideoInfo(url: String) {
         var titleStr = ""
         var extStr = ""
         var thumbStr = ""
+        var bytesStr = ""
 
         val py = Python.getInstance()
         val pyObject = py.getModule("vidloader")
 
         try {
-            val res = pyObject.callAttr("extract_video_title_thumbnail", url, mResolution.replace("\\D".toRegex(), "")).toString()
-            titleStr = res.substringBeforeLast("|||")
+            val res = pyObject.callAttr("extract_video_info", url, mResolution.replace("\\D".toRegex(), "")).toString()
+            titleStr = res.substringBefore("|||")
 
             // trim title to 25 characters
             if (titleStr.length > 25) {
                 titleStr = titleStr.substring(0, 25)
             }
 
-            thumbStr = res.substringAfter("|||")
+            var thumbAndBytesStr = res.substringAfter("|||")
+
+            thumbStr = thumbAndBytesStr.substringBeforeLast("|||")
             thumbStr = thumbStr.replace("|", "")
+
+            bytesStr = thumbAndBytesStr.substringAfterLast("|||")
+            bytesStr = bytesStr.replace("|", "")
+            bytesStr = Formatter.formatFileSize(this, bytesStr.toLong()).toString()
 
             extStr = "mp4"
         } catch (e: Exception) {
@@ -939,38 +941,40 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
 
             runOnUiThread {
                 Toast.makeText(this@MainActivity, "error loading, please try again", Toast.LENGTH_SHORT).show()
-                showEmptyLayout()
+                updateUI(UIState.EMPTY)
             }
             return
         }
 
-        Log.i(TAG, "Extracted video info: filename: $titleStr\next: $extStr\nthumbnail url: $thumbStr")
+        Log.i(TAG, "Extracted video info: filename: $titleStr\next: $extStr" +
+                "\nthumbnail url: $thumbStr\nbytes: $bytesStr")
 
         prefsManager.fileName = titleStr
         prefsManager.thumbnailUrl = thumbStr
+        prefsManager.fileSize = bytesStr
         prefsManager.fileExt = extStr
 
-        runOnUiThread { showPreviewLayout() }
+        runOnUiThread { updateUI(UIState.PREVIEW) }
     }
 
     fun onPasteClick(v: View?) {
-        mBinding.etMainInput.setText("")
+        binding.etMainInput.setText("")
         val clipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         var primaryStr = ""
         val primaryClip = clipboardManager.primaryClip
 
         if (primaryClip != null && primaryClip.itemCount > 0) {
             primaryStr = primaryClip.getItemAt(0).text.toString().trim()
-            mBinding.etMainInput.setText(primaryStr)
+            binding.etMainInput.setText(primaryStr)
         } else {
             Toast.makeText(this@MainActivity, "Please copy a video link", Toast.LENGTH_LONG).show()
-            mBinding.etMainInput.setText(primaryStr)
+            binding.etMainInput.setText(primaryStr)
         }
     }
 
     fun onDownloadClick(v: View?) {
         Log.i(TAG, ".onDownloadClicked()")
-        showDownloadingLayout()
+        updateUI(UIState.DOWNLOADING)
 
         val intent = Intent(this@MainActivity, DownloadService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -982,7 +986,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
     }
 
     fun onEnableBackgroundClicked(v: View?) {
-        mBinding.permissionHolder.visibility = View.GONE
+        binding.permissionHolder.visibility = View.GONE
         prefsManager.backgroundEnabled = "TRUE"
 
         val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
@@ -992,7 +996,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
     }
 
     fun OnEnableNotifClicked(v: View?) {
-        closeBigFrag(mBinding.bigFragHolder)
+        closeBigFrag(binding.bigFragHolder)
         ActivityCompat.requestPermissions(
             this@MainActivity,
             arrayOf(Manifest.permission.POST_NOTIFICATIONS),
@@ -1096,13 +1100,19 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
 
     override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
         Log.i(TAG, "onItemSelected position=$position")
-        val spinnerItem = parent.selectedItem.toString()
-        Log.i(TAG, "spinnerItem=$spinnerItem")
+        val spinnerItemStr = parent.selectedItem.toString()
+        Log.i(TAG, "spinnerItem=$spinnerItemStr")
 
-        mResolution = spinnerItem
+        if (spinnerItemStr == "video" || spinnerItemStr == "audio") {
+            // handle type spinner clicks
+            mFileType = spinnerItemStr
+        } else {
+            // handle res spinner clicks
+            mResolution = spinnerItemStr
 
-        val sharedPref = getSharedPreferences("ULOADER_PREFS", Context.MODE_PRIVATE)
-        sharedPref.edit().putInt("RES_POSITION", position).apply()
+            val sharedPref = getSharedPreferences("ULOADER_PREFS", Context.MODE_PRIVATE)
+            sharedPref.edit().putInt("RES_POSITION", position).apply()
+        }
     }
 
     override fun onNothingSelected(parent: AdapterView<*>?) {}
@@ -1124,13 +1134,13 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
             if (absFilePath.isNullOrEmpty()) {
                 runOnUiThread {
                     Toast.makeText(this@MainActivity, "unknown error, please try again", Toast.LENGTH_LONG).show()
-                    showEmptyLayout()
+                    updateUI(UIState.EMPTY)
                 }
                 return
             } else {
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        savedUriStr = moveFileToMovies(absFilePath)
+                        downloadedFileUri = moveFileToMovies(absFilePath).toUri()
                         // TODO use for share button
                     } catch (e: Exception) {
                         Log.e(TAG, "Move failed: ${e.message}")
@@ -1146,7 +1156,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
                     runOnUiThread {
                         incrementSuccessfulRuns()
                         Toast.makeText(this@MainActivity, "Download finished!", Toast.LENGTH_SHORT).show()
-                        showFinishLayout()
+                        updateUI(UIState.FINISHED)
                     }
                 }
             }
@@ -1210,6 +1220,19 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
             Log.d(TAG, "Temp files cleared.")
         } catch (e: Exception) {
             Log.e(TAG, "Cleanup failed: ${e.message}")
+        }
+    }
+
+    private fun shareDownloadedFile() {
+        downloadedFileUri?.let { uri ->
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "audio/mpeg"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(shareIntent, "Share Audio"))
+        } ?: run {
+            Toast.makeText(this, "File not found to share.", Toast.LENGTH_SHORT).show()
         }
     }
 

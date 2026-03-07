@@ -91,7 +91,7 @@ def extract_audio_ext(video_url):
         info_dict = ydl.extract_info(video_url, download=False)
         return info_dict['ext']
 
-def extract_video_title_thumbnail(video_url, resolution):
+def extract_video_info(video_url, resolution):
     ydl_opts = {
         'format': "best[height<=" + resolution + "]/bestvideo[height<=" + resolution + "]",
         "cachedir": False,
@@ -101,7 +101,7 @@ def extract_video_title_thumbnail(video_url, resolution):
         info_dict = ydl.extract_info(video_url, download=False)
         filename_id = f"{random.randint(0,9)}{random.randint(0,9)}{random.randint(0,9)}{random.randint(0,9)}_"
         filename = filename_id + sanitize_filename(info_dict['title'][0:23])
-        res = filename + '|||' + info_dict['thumbnail']
+        res = filename + '|||' + info_dict['thumbnail'] + '|||' + f"{info_dict['filesize']}"
         return res
 
 def sanitize_filename(filename):

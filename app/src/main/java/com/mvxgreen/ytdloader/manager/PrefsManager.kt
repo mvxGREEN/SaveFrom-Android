@@ -158,6 +158,8 @@ class PrefsManager(ctx: Context) {
             }
         }
 
+    var fileSize = ""
+
     var fileDir: String?
 
         get() = sharedPrefs!!.getString("FOLDER_NAME", "")

@@ -1,18 +1,18 @@
 <resources>
-    // App Theme
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <!-- App Theme -->
+    <style name="AppTheme" parent="Theme.Material3.DayNight">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
-    <style name="AppTheme.NoActionBar">
-        <item name="windowActionBar">true</item>
+    <style name="AppTheme.NoActionBar" parent="AppTheme">
+        <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:windowContentTransitions">true</item>
     </style>
 
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar" />
 
     <!-- Starting activity theme -->
     <style name="AppTheme.Launcher" parent="AppTheme.NoActionBar">
@@ -20,7 +20,7 @@
     </style>
 
 
-    // Text Appearance
+    <!-- Text Appearance -->
     <style name="TextAppMain" parent="TextAppearance.AppCompat">
         <item name="android:textSize">26sp</item>
         <item name="android:textColor">@color/colorWhite</item>
@@ -38,7 +38,7 @@
     </style>
 
 
-    // Privacy Policy
+    <!-- Privacy Policy -->
     <style name="TextAppFragTitle" parent="TextAppearance.AppCompat">
         <item name="android:textColor">@color/colorWhite</item>
         <item name="android:textSize">24sp</item>
