@@ -101,7 +101,7 @@ def extract_video_info(video_url, resolution):
         info_dict = ydl.extract_info(video_url, download=False)
         filename_id = f"{random.randint(0,9)}{random.randint(0,9)}{random.randint(0,9)}{random.randint(0,9)}_"
         filename = filename_id + sanitize_filename(info_dict['title'][0:23])
-        res = filename + '|||' + info_dict['thumbnail'] + '|||' + f"{info_dict['filesize']}"
+        res = filename + '|||' + info_dict['thumbnail'] + '|||' + f"{info_dict.get('filesize', 0)}"
         return res
 
 def sanitize_filename(filename):

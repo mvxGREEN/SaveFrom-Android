@@ -40,15 +40,12 @@ import com.google.android.ump.UserMessagingPlatform
 import com.google.common.collect.ImmutableList
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.mvxgreen.ytdloader.databinding.ActivityMainBinding
-import com.mvxgreen.ytdloader.frag.BigFragment
-import com.mvxgreen.ytdloader.frag.FileFragment
 import com.mvxgreen.ytdloader.manager.AdsManager
-import com.mvxgreen.ytdloader.manager.MediaManager
-import com.mvxgreen.ytdloader.manager.MediaManager.Companion.MIME_MP4
 import com.mvxgreen.ytdloader.manager.PrefsManager
 import java.net.InetAddress
 import java.time.LocalDate
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.google.firebase.FirebaseApp
 import com.mvxgreen.ytdloader.databinding.DialogCutterBinding
@@ -68,7 +65,6 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
     lateinit var binding: ActivityMainBinding
     private lateinit var fadeIn: Animation
     private lateinit var fadeOut: Animation
-    private var fileFragment: FileFragment? = null
 
     private lateinit var prefsManager: PrefsManager
     private lateinit var mFinishReceiver: FinishReceiver
@@ -117,10 +113,14 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
     companion object {
         private val TAG = MainActivity::class.java.canonicalName
 
+        const val MIME_MP4: String = "video/mp4"
+
         @JvmField
         val ABS_PATH_TEMP: String = Environment.getExternalStoragePublicDirectory(
             Environment.DIRECTORY_DOCUMENTS
         ).absolutePath + "/SaveFrom/"
+
+        @JvmField
         val ABS_PATH_MOVIES: String = Environment.getExternalStoragePublicDirectory(
             Environment.DIRECTORY_MOVIES
         ).absolutePath + "/SaveFrom/"
@@ -179,6 +179,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
             val progress = cleanProgressStr.toDouble().toInt()
 
             activityCurrent?.runOnUiThread {
+                activityCurrent?.binding?.progressRingDlr?.isIndeterminate = false
                 activityCurrent?.binding?.dlProgressText?.text = progressStr
                 activityCurrent?.binding?.progressRingDlr?.max = 100
                 activityCurrent?.binding?.progressRingDlr?.progress = progress
@@ -637,9 +638,6 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
 
                         Toast.makeText(this@MainActivity, "Video unavailable, try again later", Toast.LENGTH_SHORT).show()
                         return
-                    } else if (input.contains("instagram.com")) {
-                        showBigFrag("InFlyer")
-                        return
                     }
 
                     if (input.lastIndexOf("https://") != input.indexOf("https://")) {
@@ -738,68 +736,6 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
         }
     }
 
-    fun showBigFrag(mi: MenuItem) {
-        showBigFrag(mi.title.toString())
-    }
-
-    fun showBigFrag(title: String) {
-        val extras = Bundle().apply {
-            putString(getString(R.string.key_extra_menu_item_title), title)
-        }
-
-        val bigFragment = BigFragment().apply { arguments = extras }
-
-        val fragView = findViewById<ConstraintLayout>(R.id.big_frag_holder)
-        fragView.removeAllViews()
-        fragView.visibility = View.VISIBLE
-        supportFragmentManager.beginTransaction()
-            .setReorderingAllowed(true)
-            .add(R.id.big_frag_holder, bigFragment, null)
-            .commitAllowingStateLoss()
-    }
-
-    fun closeBigFrag(v: View?) {
-        closeBigFrag()
-    }
-
-    fun closeBigFrag() {
-        val fragHolder = findViewById<ConstraintLayout>(R.id.big_frag_holder)
-        fragHolder.visibility = View.GONE
-    }
-
-    fun showFileFrag() {
-        val fileName = prefsManager.fileName
-        val fileExt = prefsManager.fileExt
-        val absPath = "$ABS_PATH_MOVIES$fileName.$fileExt"
-
-        runOnUiThread {
-            val extras = Bundle().apply {
-                putString(getString(R.string.key_extra_abs_filepath), absPath)
-            }
-            fileFragment = FileFragment().apply { arguments = extras }
-
-            val fragView = findViewById<ConstraintLayout>(R.id.file_hint_holder)
-            fragView.removeAllViews()
-            fragView.startAnimation(fadeIn)
-            fragView.visibility = View.VISIBLE
-
-            supportFragmentManager.beginTransaction()
-                .setReorderingAllowed(true)
-                .add(R.id.file_hint_holder, fileFragment!!, null)
-                .commitAllowingStateLoss()
-        }
-    }
-
-    fun closeFileFrag() {
-        fileFragment?.let {
-            supportFragmentManager.beginTransaction()
-                .remove(it)
-                .commitAllowingStateLoss()
-        }
-        val fragHolder = findViewById<ConstraintLayout>(R.id.file_hint_holder)
-        fragHolder.visibility = View.GONE
-    }
-
     private fun updateUI(state: UIState) {
         binding.etMainInput.isEnabled = true
         binding.btnPaste.isEnabled = true
@@ -840,6 +776,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
                 binding.overlayDownloading.visibility = View.INVISIBLE // Was GONE
                 binding.etMainInput.isEnabled = false
 
+                binding.progressRingDlr.isIndeterminate = true
                 binding.progressLabel.text = getString(R.string.loading)
                 binding.loadingLayout.visibility = View.VISIBLE
 
@@ -880,7 +817,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
                 Log.d("MainActivity", "sf_ui_downloading")
                 logEvent("sf_ui_downloading", url, "")
                 binding.dlProgressText.text = getString(R.string.downloading)
-                binding.progressRingDlr.isIndeterminate = false
+                binding.progressRingDlr.isIndeterminate = true
                 binding.loadingLayout.visibility = View.INVISIBLE
                 binding.previewCard.visibility = View.VISIBLE
                 binding.downloaderCard.visibility = View.VISIBLE
@@ -914,47 +851,56 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
         var thumbStr = ""
         var bytesStr = ""
 
-        val py = Python.getInstance()
-        val pyObject = py.getModule("vidloader")
+        lifecycleScope.launch {
+            val py = Python.getInstance()
+            val pyObject = py.getModule("vidloader")
 
-        try {
-            val res = pyObject.callAttr("extract_video_info", url, mResolution.replace("\\D".toRegex(), "")).toString()
-            titleStr = res.substringBefore("|||")
+            try {
+                val res = pyObject.callAttr("extract_video_info", url, mResolution.replace("\\D".toRegex(), "")).toString()
+                titleStr = res.substringBefore("|||")
 
-            // trim title to 25 characters
-            if (titleStr.length > 25) {
-                titleStr = titleStr.substring(0, 25)
+                // trim title to 25 characters
+                if (titleStr.length > 25) {
+                    titleStr = titleStr.substring(0, 25)
+                }
+
+                var thumbAndBytesStr = res.substringAfter("|||")
+
+                thumbStr = thumbAndBytesStr.substringBeforeLast("|||")
+                thumbStr = thumbStr.replace("|", "")
+
+                bytesStr = thumbAndBytesStr.substringAfterLast("|||")
+                bytesStr = bytesStr.replace("|", "")
+                if (bytesStr != "0") {
+                    bytesStr = Formatter.formatFileSize(this@MainActivity, bytesStr.toLong()).toString()
+                } else {
+                    bytesStr = ""
+                }
+
+                extStr = "mp4"
+
+                Log.i(TAG, "Extracted video info: filename: $titleStr\next: $extStr" +
+                        "\nthumbnail url: $thumbStr\nbytes: $bytesStr")
+
+                prefsManager.fileName = titleStr
+                prefsManager.thumbnailUrl = thumbStr
+                prefsManager.fileSize = bytesStr
+                prefsManager.fileExt = extStr
+
+                updateUI(UIState.PREVIEW)
+            } catch (e: Exception) {
+                Log.e(TAG, e.toString())
+
+                // TODO try extracting from html
+
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "error loading, please try again", Toast.LENGTH_SHORT).show()
+                    updateUI(UIState.EMPTY)
+                }
             }
 
-            var thumbAndBytesStr = res.substringAfter("|||")
 
-            thumbStr = thumbAndBytesStr.substringBeforeLast("|||")
-            thumbStr = thumbStr.replace("|", "")
-
-            bytesStr = thumbAndBytesStr.substringAfterLast("|||")
-            bytesStr = bytesStr.replace("|", "")
-            bytesStr = Formatter.formatFileSize(this, bytesStr.toLong()).toString()
-
-            extStr = "mp4"
-        } catch (e: Exception) {
-            Log.e(TAG, e.toString())
-
-            runOnUiThread {
-                Toast.makeText(this@MainActivity, "error loading, please try again", Toast.LENGTH_SHORT).show()
-                updateUI(UIState.EMPTY)
-            }
-            return
         }
-
-        Log.i(TAG, "Extracted video info: filename: $titleStr\next: $extStr" +
-                "\nthumbnail url: $thumbStr\nbytes: $bytesStr")
-
-        prefsManager.fileName = titleStr
-        prefsManager.thumbnailUrl = thumbStr
-        prefsManager.fileSize = bytesStr
-        prefsManager.fileExt = extStr
-
-        runOnUiThread { updateUI(UIState.PREVIEW) }
     }
 
     fun onPasteClick(v: View?) {
@@ -996,7 +942,6 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
     }
 
     fun OnEnableNotifClicked(v: View?) {
-        closeBigFrag(binding.bigFragHolder)
         ActivityCompat.requestPermissions(
             this@MainActivity,
             arrayOf(Manifest.permission.POST_NOTIFICATIONS),
@@ -1005,7 +950,7 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
     }
 
     private fun incrementSuccessfulRuns() {
-        Log.i(TAG, "incrementSuccessfulRuns()")
+        Log.i(TAG, "incrementSuccessfulRuns")
         val prefs = getSharedPreferences("green.mobileapps.savefrom.prefs", Context.MODE_PRIVATE)
         val currentCount = prefs.getInt("SUCCESS_RUNS", 0) + 1
         prefs.edit().putInt("SUCCESS_RUNS", currentCount).apply()
@@ -1153,7 +1098,6 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
                     //var moviesFilepath = absFilePath
                     if (absFilePath.contains(ABS_PATH_TEMP))
                         savedFilePath = absFilePath.replace(ABS_PATH_TEMP, ABS_PATH_MOVIES)
-                    MediaManager(this@MainActivity, absFilePath, MIME_MP4).scanMedia()
 
                     runOnUiThread {
                         Toast.makeText(this@MainActivity, "Download finished!", Toast.LENGTH_SHORT).show()
