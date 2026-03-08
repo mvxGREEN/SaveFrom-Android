@@ -54,9 +54,15 @@ import com.mvxgreen.ytdloader.databinding.DialogUpgradeBinding
 import com.mvxgreen.ytdloader.databinding.DialogVideBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import org.jsoup.Jsoup
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.regex.Pattern
 import kotlin.toString
 
 class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.OnItemSelectedListener {
@@ -176,16 +182,16 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
         @JvmStatic
         fun setProgress(progressStr: String) {
             val cleanProgressStr = progressStr.trim().replace("%", "")
-            val progress = cleanProgressStr.toDouble().toInt()
+            val progress = cleanProgressStr.toDouble()
+            val progressInt = progress.toInt()
+            val progressMsg = "Downloading…\n$progressInt%"
 
             activityCurrent?.runOnUiThread {
                 activityCurrent?.binding?.progressRingDlr?.isIndeterminate = false
-                activityCurrent?.binding?.dlProgressText?.text = progressStr
+                activityCurrent?.binding?.dlProgressText?.text = progressMsg
                 activityCurrent?.binding?.progressRingDlr?.max = 100
-                activityCurrent?.binding?.progressRingDlr?.progress = progress
+                activityCurrent?.binding?.progressRingDlr?.progress = progressInt
             }
-
-            activityCurrent?.mDownloadService?.setProgress(100, progress)
         }
 
         @JvmStatic
@@ -757,8 +763,6 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
                 binding.downloaderCard.visibility = View.INVISIBLE
                 binding.overlayDownloading.visibility = View.INVISIBLE
 
-                binding.finishBtn.visibility = View.GONE
-                binding.finishBtn.alpha = 0.0f
                 binding.shareBtn.visibility = View.INVISIBLE
                 binding.shareBtn.alpha = 0.0f
 
@@ -797,10 +801,10 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
                 binding.overlayDownloading.visibility = View.INVISIBLE // Was GONE
                 binding.dlBtn.visibility = View.VISIBLE
 
-                binding.finishBtn.visibility = View.GONE
-                binding.finishBtn.alpha = 0.0f
                 binding.shareBtn.visibility = View.INVISIBLE
                 binding.shareBtn.alpha = 0.0f
+
+                binding.resSpinner.visibility = View.VISIBLE
 
                 Glide.with(this@MainActivity)
                     .load(prefsManager.thumbnailUrl)
@@ -833,9 +837,9 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
             UIState.FINISHED -> {
                 Log.d("MainActivity", "sf_ui_finished")
                 logEvent("sf_ui_finished", url, "")
-                binding.overlayDownloading.visibility = View.INVISIBLE // Was GONE
-                binding.finishBtn.visibility = View.VISIBLE
-                binding.finishBtn.animate().alpha(0.5f)
+                binding.overlayDownloading.visibility = View.INVISIBLE
+
+                binding.resSpinner.visibility = View.GONE
 
                 binding.shareBtn.visibility = View.VISIBLE
                 binding.shareBtn.animate().alpha(1.0f)
@@ -891,15 +895,137 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
             } catch (e: Exception) {
                 Log.e(TAG, e.toString())
 
-                // TODO try extracting from html
-
-                runOnUiThread {
-                    Toast.makeText(this@MainActivity, "error loading, please try again", Toast.LENGTH_SHORT).show()
-                    updateUI(UIState.EMPTY)
+                // try extracting info from HTML
+                val success = loadHtml(url)
+                if (success) {
+                    updateUI(UIState.PREVIEW)
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this@MainActivity, "error loading, please try again", Toast.LENGTH_SHORT).show()
+                        updateUI(UIState.EMPTY)
+                    }
                 }
             }
+        }
+    }
 
+    suspend fun loadHtml(url: String): Boolean = withContext(Dispatchers.IO) {
+        Log.i("loadHtml", "starting loadHtml")
 
+        delay(34) // Added network delay
+
+        var fileName = ""
+        var thumbnailUrl = ""
+        var downloadUrl = ""
+        var fileSize = "0"
+
+        try {
+            val doc = Jsoup.connect(url).userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+                .timeout(8000)
+                .get()
+            val html = doc.html().toString()
+
+            Log.i("loadHtml", "html length: ${html.length}")
+
+            // extract filename from title
+            fileName = sanitizeFilename(doc.title().toString())
+
+            // extract thumbnail url
+            thumbnailUrl = doc.select("meta[property=og:image]")
+                .attr("content")
+
+            // extract download url
+            downloadUrl = getFirstMp4Url(html) ?: ""
+
+            // check for rnd parameter (ex. thisvid.com)
+            if (html.contains("rnd: ")) {
+                val rnd = html.substringAfter("rnd: '").substringBefore("'")
+                Log.i("loadHtml", "extracted rnd parameter: $rnd")
+                downloadUrl = downloadUrl + "?rnd=$rnd"
+            }
+
+            // save info
+            Log.i(TAG, "Extracted video info: filename: $fileName" +
+                    "\ndownload url: $downloadUrl\next: mp4" +
+                    "\nthumbnail url: $thumbnailUrl\nbytes: 0")
+            prefsManager.fileName = fileName
+            prefsManager.thumbnailUrl = thumbnailUrl
+            prefsManager.fileSize = fileSize
+            prefsManager.fileExt = "mp4"
+
+            return@withContext true
+        } catch (e: Exception) {
+            Log.e("loadHtml", "Exception: ${e.message}")
+            return@withContext false
+        }
+    }
+
+    fun getFirstMp4Url(html: String): String? {
+        // Regex pattern:
+        // https?://       -> Matches http:// or https://
+        // [^\s"'<>]+?     -> Matches 1 or more characters that are NOT whitespace, quotes, or HTML brackets (lazy)
+        // \.mp4           -> Matches exactly ".mp4"
+        // [^\s"'<>]* -> Matches any trailing characters like query parameters (e.g., ?v=123)
+        val regex = """https?://[^\s"'<>]+?\.mp4[^\s"'<>]*""".toRegex(RegexOption.IGNORE_CASE)
+
+        val matchResult = regex.find(html)
+
+        return matchResult?.value
+    }
+
+    fun sanitizeFilename(input: String): String {
+        // 1. Replace spaces with underscores
+        var filename = input.replace(" ", "_")
+
+        // 2. Remove characters that are illegal in Android/Windows/Unix file systems
+        val illegalChars = "[\\\\/:*?\"<>|]".toRegex()
+        filename = filename.replace(illegalChars, "")
+
+        // 3. Truncate to 25 characters maximum
+        filename = filename.take(25)
+
+        // 4. Provide a fallback in case the string was entirely illegal characters or empty
+        if (filename.isEmpty()) {
+            return "default_filename"
+        }
+
+        return filename
+    }
+
+    private suspend fun loadNetworkResponse(urlStr: String): String = withContext(Dispatchers.IO) {
+        delay(34) // Added network delay
+        try {
+            val conn = URL(urlStr).openConnection() as HttpURLConnection
+            conn.connectTimeout = 5000
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+            conn.setRequestProperty("Referer", "https://www.google.com/")
+            conn.setRequestProperty("Origin", "https://www.google.com/")
+            conn.setRequestProperty("Accept", "application/json, text/javascript, */*; q=0.01")
+            conn.connect()
+
+            val code = conn.responseCode
+            if (code == 200) {
+                return@withContext conn.inputStream.bufferedReader().use { it.readText() }
+            } else {
+                logEvent("sf_network_response_fail", "HTTP Code: $code", urlStr)
+                return@withContext ""
+            }
+        } catch (e: Exception) {
+            logEvent("sf_network_exception", e.message ?: "Unknown Error", urlStr)
+            return@withContext ""
+        }
+    }
+
+    suspend fun loadJson(urlStr: String) = withContext(Dispatchers.IO) {
+        delay(34) // Added network delay
+        try {
+            val json = URL(urlStr).readText()
+            val jsonObj = JSONObject(json)
+
+            // TODO extract video title, thumbnail, and/or download url
+
+        } catch (e: Exception) {
+            logEvent("sf_json_parse_exception", e.message ?: "Unknown Error", urlStr)
         }
     }
 
