@@ -99,11 +99,11 @@ class MainActivity : AppCompatActivity(), PurchasesUpdatedListener, AdapterView.
             val allGranted = permissions.entries.all { it.value }
             if (allGranted) {
                 Log.i(TAG, "All media permissions granted")
-                prepareFileDirs() // Ensure directories exist once permissions are granted
             } else {
                 Log.w(TAG, "Some media permissions were denied")
-                Toast.makeText(this, "Storage permission is required to save downloads.", Toast.LENGTH_LONG).show()
+                //Toast.makeText(this, "Storage permission is required to save downloads.", Toast.LENGTH_LONG).show()
             }
+            prepareFileDirs() // Ensure directories exist
         }
 
     // admob
