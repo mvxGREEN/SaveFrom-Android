@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/launcher_savefrom_round.png" alt="SaveFrom Round App Icon" width="200"/>
+</p>
+
 # SaveFrom 🎞️⬇️
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://github.com/mvxGREEN/SaveFrom/actions)
@@ -20,6 +24,18 @@ Powered by an embedded `yt-dlp` Python package.
 * **Platform**: Android SDK
 * **Python SDK**: [chaquopy](https://chaquo.com/chaquopy/)
 * **Core Library**: [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+
+## 📸 Screenshots
+
+<p align="center">
+  <img src="assets/Samsung Galaxy S8 Screenshot 1.png" alt="SaveFrom: Video Downloader" width="200"/>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="assets/Samsung Galaxy S8 Screenshot 2.png" width="200"/>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="assets/Samsung Galaxy S8 Screenshot 3.png" width="200"/>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="assets/Samsung Galaxy S8 Screenshot 4.png" width="200"/>
+</p>
 
 ## ⚡️ Quick Start App
 
