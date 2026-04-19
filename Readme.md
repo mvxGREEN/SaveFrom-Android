@@ -5,7 +5,7 @@
 [![Language: Kotlin](https://img.shields.io/badge/Language-Kotlin-purple.svg)](https://kotlinlang.org/)
 [![Platform: Android](https://img.shields.io/badge/Platform-Android-3DDC84.svg)](https://developer.android.com/)
 
-A powerful and universal URL-to-MP4 video downloader app for Android, leveraging the renowned `yt-dlp` Python package.
+A universal URL-to-MP4 video downloader app for Android, leveraging the renowned `yt-dlp` Python package.
 
 ## ✨ Features
 * **Universal Downloader**: Capable of downloading videos from a vast array of supported platforms (YouTube, TikTok, and hundreds more) directly to your Android device.
