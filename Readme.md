@@ -21,9 +21,17 @@ Powered by an embedded `yt-dlp` Python package.
 * **Python SDK**: [chaquopy](https://chaquo.com/chaquopy/)
 * **Core Library**: [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 
-## 🚀 Getting Started
+## ⚡️ Quick Start App
 
-To get a local copy up and running, follow these simple steps.
+1. Download latest APK from [Releases](https://github.com/mvxGREEN/SaveFrom-Android/releases) to an Android device.
+
+2. Open APK file to install.
+
+3. Done!  Open **SaveFrom** app to start downloading videos.
+
+## 💻 Build From Source Code
+
+To build and run this project locally, you will need [Android Studio](https://developer.android.com/studio) installed on your machine.
 
 ### Prerequisites
 * **Android Studio**: Make sure you have the latest version of [Android Studio](https://developer.android.com/studio) installed.
