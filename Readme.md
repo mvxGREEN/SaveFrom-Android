@@ -28,7 +28,7 @@ Powered by an embedded `yt-dlp` Python package.
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="assets/Samsung Galaxy S8 Screenshot 1.png" alt="SaveFrom: Video Downloader" width="200"/>
+  <img src="assets/Samsung Galaxy S8 Screenshot 1.png" width="200"/>
   &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="assets/Samsung Galaxy S8 Screenshot 2.png" width="200"/>
   &nbsp;&nbsp;&nbsp;&nbsp;
