@@ -18,7 +18,7 @@ Powered by an embedded `yt-dlp` Python package.
 ## 🛠 Tech Stack
 * **Language**: Kotlin (App Logic & UI), Python (Extraction Engine), Java
 * **Platform**: Android SDK
-* **Python SDK**: [Chaquopy](https://chaquo.com/chaquopy/)
+* **Python SDK**: [chaquopy](https://chaquo.com/chaquopy/)
 * **Core Library**: [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 
 ## 🚀 Getting Started
