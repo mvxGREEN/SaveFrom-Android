@@ -7,7 +7,7 @@
 
 Universal URL-to-MP4 video downloader app for Android.  
 
-Powered by the renowned `yt-dlp` Python package.
+Powered by the renowned `yt-dlp` Python package, embedded with `chaquopy`
 
 ## ✨ Features
 * **Universal Downloader**: Capable of downloading videos from a vast array of supported platforms (YouTube, TikTok, and hundreds more) directly to your Android device.
