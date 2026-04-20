@@ -13,18 +13,6 @@ Universal URL-to-MP4 video downloader app for Android.
 
 Copy, Paste, and Save Videos from virtually any source.  Powered by embedded `yt-dlp` Python package.
 
-## ✨ Features
-* **Universal Downloader**: Capable of downloading videos from a vast array of supported platforms (YouTube, TikTok, and hundreds more) directly to your Android device.
-* **Powered by `yt-dlp`**: Utilizes the robust and constantly updated `yt-dlp` library to handle complex extractions and varying video platform architectures.
-* **Chaquopy Integration**: Seamlessly runs Python scripts natively within the Android app environment using the Chaquopy SDK.
-* **Kotlin-Centric**: The Android UI and core app architecture are built primarily in Kotlin for a modern, safe, and efficient mobile experience.
-
-## 🛠 Tech Stack
-* **Language**: Kotlin (App Logic & UI), Python (Extraction Engine), Java
-* **Platform**: Android SDK
-* **Python SDK**: [chaquopy](https://chaquo.com/chaquopy/)
-* **Core Library**: [yt-dlp](https://github.com/yt-dlp/yt-dlp)
-
 ## 📸 Screenshots
 
 <p align="center">
@@ -36,6 +24,18 @@ Copy, Paste, and Save Videos from virtually any source.  Powered by embedded `yt
   &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="assets/Samsung Galaxy S8 Screenshot 4.png" width="180"/>
 </p>
+
+## ✨ Features
+* **Universal Downloader**: Capable of downloading videos from a vast array of supported platforms (YouTube, TikTok, and hundreds more) directly to your Android device.
+* **Powered by `yt-dlp`**: Utilizes the robust and constantly updated `yt-dlp` library to handle complex extractions and varying video platform architectures.
+* **Chaquopy Integration**: Seamlessly runs Python scripts natively within the Android app environment using the Chaquopy SDK.
+* **Kotlin-Centric**: The Android UI and core app architecture are built primarily in Kotlin for a modern, safe, and efficient mobile experience.
+
+## 🛠 Tech Stack
+* **Language**: Kotlin (App Logic & UI), Python (Extraction Engine), Java
+* **Platform**: Android SDK
+* **Python SDK**: [chaquopy](https://chaquo.com/chaquopy/)
+* **Core Library**: [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 
 ## ⚡️ Quick Start App
 
