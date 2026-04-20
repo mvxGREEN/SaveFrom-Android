@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/launcher_savefrom_round.png" alt="SaveFrom Round App Icon" width="200"/>
+  <img src="assets/launcher_savefrom_round.png" alt="SaveFrom Round App Icon" width="180"/>
 </p>
 
 # SaveFrom 🎞️⬇️
@@ -28,13 +28,13 @@ Copy, Paste, and Save Videos from virtually any source.  Powered by embedded `yt
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="assets/Samsung Galaxy S8 Screenshot 1.png" width="200"/>
+  <img src="assets/Samsung Galaxy S8 Screenshot 1.png" width="180"/>
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/Samsung Galaxy S8 Screenshot 2.png" width="200"/>
+  <img src="assets/Samsung Galaxy S8 Screenshot 2.png" width="180"/>
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/Samsung Galaxy S8 Screenshot 3.png" width="200"/>
+  <img src="assets/Samsung Galaxy S8 Screenshot 3.png" width="180"/>
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/Samsung Galaxy S8 Screenshot 4.png" width="200"/>
+  <img src="assets/Samsung Galaxy S8 Screenshot 4.png" width="180"/>
 </p>
 
 ## ⚡️ Quick Start App
